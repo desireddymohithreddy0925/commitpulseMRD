@@ -76,18 +76,19 @@ URL Parameter > Theme Default > System Fallback
 
 ### Parameter Reference
 
-| Parameter | Type      | Required   | Default       | Description                                           |
-| --------- | --------- | ---------- | ------------- | ----------------------------------------------------- |
-| `user`    | `string`  | ✅ **Yes** | —             | GitHub username to render                             |
-| `theme`   | `string`  | No         | `dark`        | Preset theme name (see below)                         |
-| `bg`      | `hex`     | No         | Theme default | Background color — **without** `#`                    |
-| `accent`  | `hex`     | No         | Theme default | Tower & glow color — **without** `#`                  |
-| `text`    | `hex`     | No         | Theme default | Label & stat text color — **without** `#`             |
-| `radius`  | `number`  | No         | `8`           | Border corner radius in pixels                        |
-| `speed`   | `string`  | No         | `8s`          | Radar scan animation duration (e.g. `4s`, `12s`)      |
-| `scale`   | `string`  | No         | `linear`      | Tower height scaling: `linear` or `log` (logarithmic) |
-| `refresh` | `boolean` | No         | `false`       | Bypass cache for real-time data                       |
-| `year`    | `string`  | No         | —             | Calendar year to render (e.g. `2023`, `2024`)         |
+| Parameter | Type      | Required   | Default                        | Description                                           |
+| --------- | --------- | ---------- | ------------------------------ | ----------------------------------------------------- |
+| `user`    | `string`  | ✅ **Yes** | —                              | GitHub username to render                             |
+| `theme`   | `string`  | No         | `dark`                         | Preset theme name (see below)                         |
+| `bg`      | `hex`     | No         | Theme default                  | Background color — **without** `#`                    |
+| `accent`  | `hex`     | No         | Theme default                  | Tower & glow color — **without** `#`                  |
+| `text`    | `hex`     | No         | Theme default                  | Label & stat text color — **without** `#`             |
+| `radius`  | `number`  | No         | `8`                            | Border corner radius in pixels                        |
+| `speed`   | `string`  | No         | `8s`                           | Radar scan animation duration (e.g. `4s`, `12s`)      |
+| `scale`   | `string`  | No         | `linear`                       | Tower height scaling: `linear` or `log` (logarithmic) |
+| `font`    | `string`  | No         | CommitPulse default typography | Any **Google Font** name (e.g., `Orbitron`, `Inter`)  |
+| `refresh` | `boolean` | No         | `false`                        | Bypass cache for real-time data                       |
+| `year`    | `string`  | No         | —                              | Calendar year to render (e.g. `2023`, `2024`)         |
 
 ### Theme Presets
 
@@ -112,6 +113,10 @@ URL Parameter > Theme Default > System Fallback
 <!-- The Dracula aesthetic -->
 
 ![](https://commitpulse.vercel.app/api/streak?user=jhasourav07&theme=dracula)
+
+<!-- Dynamic Google Fonts — Space-age look with Orbitron -->
+
+![](https://commitpulse.vercel.app/api/streak?user=jhasourav07&font=Orbitron)
 
 <!-- Fully custom — hot orange on void black -->
 

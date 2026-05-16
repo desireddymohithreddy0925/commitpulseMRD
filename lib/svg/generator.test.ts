@@ -57,13 +57,39 @@ describe('generateSVG', () => {
     expect(svg).toContain('class="heat-particles"');
   });
 
-  it('defaults invalid fonts to JetBrains Mono', () => {
+  it('supports dynamic Google Fonts for non-predefined fonts', () => {
     const svg = generateSVG(
       mockStats,
-      { user: 'avi', font: 'invalidfont' } as unknown as BadgeParams,
+      { user: 'avi', font: 'Inter' } as unknown as BadgeParams,
       mockCalendar
     );
-    expect(svg).toContain('JetBrains Mono');
+
+    expect(svg).toContain(
+      "@import url('https://fonts.googleapis.com/css2?family=Inter&amp;display=swap');"
+    );
+    expect(svg).toContain('font-family: "Inter", sans-serif;');
+  });
+
+  it('replaces spaces with plus sign in dynamic Google Font URLs', () => {
+    const svg = generateSVG(
+      mockStats,
+      { user: 'avi', font: 'Open Sans' } as unknown as BadgeParams,
+      mockCalendar
+    );
+
+    expect(svg).toContain('family=Open+Sans');
+  });
+
+  it('sanitizes dangerous characters in font names to prevent CSS injection', () => {
+    const svg = generateSVG(
+      mockStats,
+      { user: 'avi', font: 'Inter"</style><script>alert(1)</script>' } as unknown as BadgeParams,
+      mockCalendar
+    );
+
+    expect(svg).toContain('family=Interstylescriptalert1script');
+    expect(svg).not.toContain('alert(1)');
+    expect(svg).not.toContain('<script>');
   });
 
   it('handles missing params with defaults', () => {
@@ -71,6 +97,18 @@ describe('generateSVG', () => {
     expect(svg).toContain('0d1117'); // default bg
     expect(svg).toContain('00ffaa'); // default accent
     expect(svg).toContain('ffffff'); // default text
+  });
+
+  it('falls back to default typography for completely invalid font names', () => {
+    const svg = generateSVG(
+      mockStats,
+      { user: 'avi', font: '!!!' } as unknown as BadgeParams,
+      mockCalendar
+    );
+    // Should NOT contain a dynamic google fonts import for an empty/invalid family
+    expect(svg).not.toContain('family=&amp;display=swap');
+    // Should use default body font
+    expect(svg).toContain('font-family: "Space Grotesk", sans-serif');
   });
 
   // ── Auto-theme (prefers-color-scheme) tests ──────────────────────────────

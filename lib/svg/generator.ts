@@ -153,9 +153,17 @@ export function generateSVG(
   const accent = `#${(params.accent || '00ffaa').replace('#', '')}`;
   const text = `#${(params.text || 'ffffff').replace('#', '')}`;
 
-  const selectedFont = params.font
-    ? FONT_MAP[params.font.toLowerCase()] || '"JetBrains Mono", monospace'
-    : null;
+  const sanitizeFont = (name: string) => name.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+  const sanitizedFont = params.font ? sanitizeFont(params.font) : null;
+
+  const predefinedFont = sanitizedFont ? FONT_MAP[sanitizedFont.toLowerCase()] : null;
+  const isPredefinedFont = Boolean(predefinedFont);
+
+  const selectedFont = isPredefinedFont
+    ? predefinedFont
+    : sanitizedFont
+      ? `"${sanitizedFont}", sans-serif`
+      : null;
 
   const defaultTitleFont = '"Syncopate", sans-serif';
   const defaultBodyFont = '"Space Grotesk", sans-serif';
@@ -199,6 +207,14 @@ export function generateSVG(
     }
   }
 
+  // dynamic google fonts import
+  const googleFontsImport =
+    sanitizedFont && !isPredefinedFont
+      ? `@import url('https://fonts.googleapis.com/css2?family=${encodeURIComponent(
+          sanitizedFont
+        ).replace(/%20/g, '+')}&amp;display=swap');`
+      : '';
+
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420" fill="none">
   <defs>
@@ -210,6 +226,7 @@ export function generateSVG(
 
   <style>
   @import url('https://fonts.googleapis.com/css2?family=Fira+Code&amp;family=JetBrains+Mono&amp;family=Roboto&amp;display=swap');
+  ${googleFontsImport}
 
   .title {
     font-family: ${selectedFont || defaultTitleFont};
