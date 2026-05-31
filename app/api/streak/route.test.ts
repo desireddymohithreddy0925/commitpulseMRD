@@ -209,6 +209,17 @@ describe('GET /api/streak', () => {
       const textOutput = await response.text();
       expect(textOutput).toContain('<svg');
     });
+
+    it('returns 400 when org contains invalid characters', async () => {
+      const response = await GET(
+        makeRequest({ user: 'octocat', org: 'invalid_org_name_with_spaces' })
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.details.fieldErrors.org[0]).toBe('Invalid organization name format');
+      expect(getOrgDashboardData).not.toHaveBeenCalled();
+    });
   });
 
   describe('successful response', () => {

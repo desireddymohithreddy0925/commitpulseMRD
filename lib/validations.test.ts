@@ -463,6 +463,18 @@ describe('streakParamsSchema — size fallback behavior', () => {
     }
   });
 
+  it('should fail when org contains invalid characters', () => {
+    const result = streakParamsSchema.safeParse({
+      user: 'octocat',
+      org: 'invalid_org_name_with_spaces',
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.org?.[0]).toBe('Invalid organization name format');
+    }
+  });
+
   it('should keep org undefined when omitted', () => {
     const result = streakParamsSchema.safeParse({
       user: 'octocat',
