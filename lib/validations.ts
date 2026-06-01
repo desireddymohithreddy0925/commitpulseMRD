@@ -201,6 +201,9 @@ const baseStreakParamsSchema = z.object({
   // Invalid size values fall back to 'medium' to preserve badge rendering.
   size: z.enum(['small', 'medium', 'large']).catch('medium').default('medium'),
 
+  // to fetch N days contributions
+  days: z.coerce.number().int().positive().max(365).optional(),
+
   // Silently fall back to '8s' for invalid format (matches old behavior)
   speed: z
     .string()
