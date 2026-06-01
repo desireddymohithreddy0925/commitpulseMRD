@@ -256,7 +256,7 @@ type FetchOptions = {
 
 export const GITHUB_CACHE_TTL_MS = 5 * 60 * 1000;
 
-const contributionsCache = new DistributedCache<ExtendedContributionData>(1000);
+export const contributionsCache = new DistributedCache<ExtendedContributionData>(1000);
 const profileCache = new DistributedCache<GitHubUserProfile>(1000);
 const reposCache = new DistributedCache<GitHubRepo[]>(500);
 const contributedReposCache = new DistributedCache<Record<string, unknown>[]>(500);
@@ -427,8 +427,41 @@ export async function fetchGitHubContributions(
     return fetchContributionsUncached(username, key, options, cached);
   };
 
-  if (options.bypassCache) return load(null);
-  return contributionsCache.getOrSet(key, load, LONG_CACHE_TTL, shouldFetch);
+  if (options.bypassCache) {
+    try {
+      return await load(null);
+    } catch (err: unknown) {
+      const staleData = await contributionsCache.get(key);
+      if (staleData) {
+        console.warn(
+          `[GitHub API] Fetch failed for "${username}", falling back to stale cache:`,
+          err
+        );
+        return {
+          ...staleData,
+          isOfflineFallback: true,
+        };
+      }
+      throw err;
+    }
+  }
+
+  try {
+    return await contributionsCache.getOrSet(key, load, LONG_CACHE_TTL, shouldFetch);
+  } catch (err: unknown) {
+    const staleData = await contributionsCache.get(key);
+    if (staleData) {
+      console.warn(
+        `[GitHub API] Fetch failed for "${username}", falling back to stale cache:`,
+        err
+      );
+      return {
+        ...staleData,
+        isOfflineFallback: true,
+      };
+    }
+    throw err;
+  }
 }
 
 async function fetchContributionsUncached(
