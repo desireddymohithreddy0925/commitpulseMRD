@@ -14,6 +14,7 @@ import { Footer } from '@/app/components/Footer';
 
 import { FeatureCard, FeatureCardsSection } from '@/components/FeatureCards';
 import { DiscordButton } from '@/components/DiscordButton';
+
 import { WallOfLove } from '@/components/WallOfLove';
 
 const Icons = {
