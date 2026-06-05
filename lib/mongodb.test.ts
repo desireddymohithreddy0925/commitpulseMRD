@@ -105,28 +105,12 @@ describe('dbConnect', () => {
     process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
     global.mongoose.conn = null;
 
-    //const mockMongoose = { connection: 'mock' };
     vi.mocked(mongoose.connect).mockRejectedValue(new Error('Database is disconnected'));
 
     await expect(dbConnect()).rejects.toThrow('Database is disconnected');
 
     // The promise should be cleared so it can try again
     expect(global.mongoose.promise).toBeNull();
-  });
-
-  it('handles mongoose Connection State 3 (disconnecting) gracefully', async () => {
-    process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
-    global.mongoose.conn = null;
-    mockMongooseConnection.readyState = 3;
-
-    const mockMongoose = { connection: 'mock' };
-    setConnectedMongoose(mockMongoose as unknown as typeof mongoose);
-
-    const conn = await dbConnect();
-
-    expect(mongoose.connect).toHaveBeenCalledTimes(1);
-    expect(conn).toBe(mockMongoose);
-    expect(global.mongoose.conn).toBe(mockMongoose);
   });
 
   it('returns the cached connection immediately when mongoose is already connected', async () => {
@@ -169,13 +153,17 @@ describe('dbConnect', () => {
 
   it('handles mongoose Connection State 3 (disconnecting) gracefully', async () => {
     process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+    global.mongoose.conn = null;
     mockMongooseConnection.readyState = 3;
-    const mockMDB = { connection: 'mock' };
-    setConnectedMongoose(mockMDB as unknown as typeof mongoose);
 
-    const res = await dbConnect();
+    const mockMongoose = { connection: 'mock' };
+    setConnectedMongoose(mockMongoose as unknown as typeof mongoose);
+
+    const conn = await dbConnect();
+
     expect(mongoose.connect).toHaveBeenCalledTimes(1);
-    expect(res).toBe(mockMDB);
+    expect(conn).toBe(mockMongoose);
+    expect(global.mongoose.conn).toBe(mockMongoose);
   });
 
   it('reuses an in-flight promise when state 3 triggers concurrent dbConnect calls', async () => {

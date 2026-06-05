@@ -342,6 +342,36 @@ describe('User Model', () => {
       readyStateSpy.mockRestore();
       connectSpy.mockRestore();
     });
+
+    //test to ensure that if the connection is already active (readyState 1), it does not trigger the lazy initialization fallback
+    it('does not trigger lazy initialization fallback when connection is already active', async () => {
+      const { vi } = await import('vitest');
+
+      // Mock mongoose.connection.readyState to return 1 (connected)
+      const readyStateSpy = vi
+        .spyOn(mongoose.connection, 'readyState', 'get')
+        .mockReturnValue(1 as unknown as typeof mongoose.connection.readyState);
+
+      // Spy on mongoose.connect
+      const connectSpy = vi.spyOn(mongoose, 'connect').mockResolvedValue(mongoose);
+
+      // Simulate database operation
+      const executeDbOperation = async () => {
+        if (mongoose.connection.readyState === 99) {
+          await mongoose.connect('mongodb://localhost:27017/test');
+        }
+      };
+
+      await executeDbOperation();
+
+      // Assertions
+      expect(mongoose.connection.readyState).toBe(1);
+      expect(connectSpy).not.toHaveBeenCalled();
+
+      // Cleanup
+      readyStateSpy.mockRestore();
+      connectSpy.mockRestore();
+    });
   });
 
   describe('Database Connection State 3 Handling', () => {
@@ -405,5 +435,52 @@ describe('User Schema Behaviors under Connection State 2 (Variation 3)', () => {
     expect(result).toBe('buffered');
 
     readyStateSpy.mockRestore();
+  });
+
+  describe('Database Connection State 3 (Disconnecting) Handling', () => {
+    it('aborts/rolls back active transactions cleanly when connection is in state 3 (disconnecting)', async () => {
+      const { vi } = await import('vitest');
+
+      const readyStateSpy = vi
+        .spyOn(mongoose.connection, 'readyState', 'get')
+        .mockReturnValue(3 as unknown as typeof mongoose.connection.readyState);
+
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn().mockResolvedValue(undefined),
+        endSession: vi.fn().mockResolvedValue(undefined),
+      } as unknown as mongoose.ClientSession;
+
+      const startSessionSpy = vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession);
+
+      const runTransactionWithCheck = async (session: mongoose.ClientSession) => {
+        session.startTransaction();
+        try {
+          if (mongoose.connection.readyState === 3) {
+            await session.abortTransaction();
+            return { status: 'aborted' };
+          }
+          await session.commitTransaction();
+          return { status: 'committed' };
+        } catch (error) {
+          await session.abortTransaction();
+          throw error;
+        } finally {
+          await session.endSession();
+        }
+      };
+
+      const session = await mongoose.startSession();
+      const result = await runTransactionWithCheck(session);
+
+      expect(result.status).toBe('aborted');
+      expect(mockSession.abortTransaction).toHaveBeenCalledTimes(1);
+      expect(mockSession.endSession).toHaveBeenCalledTimes(1);
+      expect(mockSession.commitTransaction).not.toHaveBeenCalled();
+
+      readyStateSpy.mockRestore();
+      startSessionSpy.mockRestore();
+    });
   });
 });

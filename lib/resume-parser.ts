@@ -41,11 +41,11 @@ function extractSection(text: string, headers: RegExp): string[] {
     }
     if (inSection) {
       if (
-        SKILL_SECTION_HEADERS.test(line) ||
-        EDUCATION_SECTION_HEADERS.test(line) ||
-        EXPERIENCE_SECTION_HEADERS.test(line)
+        (SKILL_SECTION_HEADERS.test(line) && !headers.test(line)) ||
+        (EDUCATION_SECTION_HEADERS.test(line) && !headers.test(line)) ||
+        (EXPERIENCE_SECTION_HEADERS.test(line) && !headers.test(line))
       ) {
-        if (line !== lines[lines.indexOf(line)]) break;
+        break;
       }
       sectionLines.push(line);
     }
@@ -113,9 +113,27 @@ function extractTextFromBuffer(buffer: Buffer, _mimeType: string): string {
   const text = buffer.toString('utf-8');
   const printable = text
     .replace(/[^\x20-\x7E\n\r]/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\r/g, '')
     .trim();
   return printable;
+}
+
+/**
+ * Extracts a phone number from raw resume text.
+ *
+ * Matches common formats including international prefixes,
+ * dashes, dots, spaces, and parentheses.
+ *
+ * @param text - Raw resume text.
+ * @returns The first phone number found, or an empty string.
+ *
+ * @example
+ * const phone = extractPhone(rawText);
+ */
+function extractPhone(text: string): string {
+  const match = text.match(/(\+?\d{1,3}[\s.-]?)?(\(?\d{3}\)?[\s.-]?)(\d{3}[\s.-]?\d{4})/);
+  return match ? match[0].trim() : '';
 }
 
 export async function parseResume(buffer: Buffer, mimeType: string): Promise<ParsedResume> {
@@ -124,6 +142,7 @@ export async function parseResume(buffer: Buffer, mimeType: string): Promise<Par
   return {
     name: extractName(rawText),
     email: extractEmail(rawText),
+    phone: extractPhone(rawText),
     skills: extractSkills(rawText),
     education: extractEducation(rawText),
     experience: extractExperience(rawText),
@@ -137,3 +156,22 @@ export const ALLOWED_MIME_TYPES = [
 ];
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+// Leading-byte signatures used to reject content that does not match its declared MIME type.
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  'application/pdf': [[0x25, 0x50, 0x44, 0x46, 0x2d]],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+    [0x50, 0x4b, 0x03, 0x04],
+    [0x50, 0x4b, 0x05, 0x06],
+    [0x50, 0x4b, 0x07, 0x08],
+  ],
+  'application/msword': [[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]],
+};
+
+export function hasValidFileSignature(buffer: Buffer, mimeType: string): boolean {
+  const signatures = FILE_SIGNATURES[mimeType];
+  if (!signatures) return false;
+  return signatures.some(
+    (sig) => buffer.length >= sig.length && sig.every((byte, index) => buffer[index] === byte)
+  );
+}

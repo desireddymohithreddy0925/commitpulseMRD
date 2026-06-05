@@ -6,8 +6,12 @@ interface ShareButtonsProps {
 }
 
 export default function ShareButtons({ url, title = '' }: ShareButtonsProps) {
-  const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-  const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
+  const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+    url
+  )}`;
+  const twitterUrl =
+    `https://x.com/intent/tweet?url=${encodeURIComponent(url)}` +
+    (title ? `&text=${encodeURIComponent(title)}` : '');
 
   return (
     <div className="flex gap-3">
@@ -15,12 +19,16 @@ export default function ShareButtons({ url, title = '' }: ShareButtonsProps) {
         href={linkedinUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Share on LinkedIn"
+        aria-label="Share on LinkedIn (opens in a new tab)"
       >
         <FaLinkedin size={24} aria-hidden="true" />
       </a>
-
-      <a href={twitterUrl} target="_blank" rel="noopener noreferrer" aria-label="Share on X">
+      <a
+        href={twitterUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Share on X / Twitter (opens in a new tab)"
+      >
         <FaXTwitter size={24} aria-hidden="true" />
       </a>
     </div>
