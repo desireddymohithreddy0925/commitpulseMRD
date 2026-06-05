@@ -30,7 +30,7 @@ describe('TTLCache', () => {
       cache.destroy();
     });
 
-    it('handles deeply nested object values without crashing', () => {
+    it('verifies TTLCache behavior for deeply nested object values (Variation 2)', () => {
       const cache = new TTLCache<{
         level1: {
           level2: {
@@ -47,8 +47,11 @@ describe('TTLCache', () => {
         },
       };
 
-      expect(() => cache.set('nested', nested, 60_000)).not.toThrow();
-      expect(cache.get('nested')).toEqual(nested);
+      expect(() => {
+        cache.set('deeply-nested-object', nested, 60_000);
+      }).not.toThrow();
+
+      expect(cache.get('deeply-nested-object')).toEqual(nested);
 
       cache.destroy();
     });
