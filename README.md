@@ -17,6 +17,7 @@
 ## 📖 Table of Contents
 
 - [Live Demo](#live-demo)
+- [Features](#-features)
 - [Documentation Index](#documentation-index)
 - [Contributing](#contributing)
 - [License](#license)
@@ -261,6 +262,59 @@ Explore some of the built-in CommitPulse themes and quickly copy the style you l
 
 ![](https://commitpulse.vercel.app/api/streak?user=jhasourav07&view=heatmap&theme=neon)
 ```
+
+---
+
+---
+
+## ✨ Features
+
+CommitPulse transforms GitHub contribution data into visually engaging and highly customizable SVG badges.
+
+### 🎨 Theme & Customization
+
+- Multiple built-in themes including Dark, Neon, Dracula, Gruvbox, GitHub, and more.
+- Custom colors using `bg`, `accent`, and `text` parameters.
+- Dynamic font selection and styling options.
+- Adjustable dimensions, border radius, opacity, gradients, and shading.
+- Automatic light/dark mode adaptation with the `auto` theme.
+
+### 📈 Contribution Analytics
+
+- Current streak and longest streak tracking.
+- Monthly contribution summaries and trends.
+- Historical contribution viewing by year.
+- Grace period configuration for streak calculations.
+- Lines of Code (LOC) contribution mode.
+
+### 🔥 Visualization Modes
+
+- GitHub-style heatmap view.
+- Monthly statistics view.
+- Isometric 3D monolith rendering.
+- Animated SVG visualizations.
+- Theme-aware rendering and effects.
+
+### 🌍 Localization & Accessibility
+
+- Multi-language support including Hindi and Chinese.
+- Timezone-aware contribution calculations.
+- High-contrast accessibility theme.
+- Responsive SVG rendering across devices.
+
+### ⚔️ Comparison Features
+
+- Side-by-side contribution comparisons using the `versus` parameter.
+- Comparative contribution insights between GitHub users.
+- Monthly delta and trend analysis.
+
+### ⚡ Performance & Reliability
+
+- Real-time GitHub GraphQL integration.
+- UTC-midnight synchronized caching.
+- Edge deployment powered by Vercel.
+- Optimized SVG generation pipeline.
+- Cache refresh support for the latest contribution data.
 
 ---
 

@@ -209,8 +209,8 @@ describe('SectionCard Accessibility', () => {
   /**
    * Test Case 5: Heading Hierarchy Validation
    *
-   * Verifies that the SectionCard title does not use explicit heading elements (h1-h6),
-   * which prevents document outline level skips or violations.
+   * Verifies that the SectionCard title uses a semantic heading level (h3)
+   * to align with screen reader expectations and allow landmark navigation.
    * Also verifies headings inside children follow proper layout nesting rules.
    */
   it('5. Heading Hierarchy Validation: verifies heading structure logical flow and checks for violations', () => {
@@ -226,13 +226,16 @@ describe('SectionCard Accessibility', () => {
     );
 
     // Assert
-    // Verify that the title of SectionCard is not marked as a heading
+    // Verify that the title of SectionCard is marked as an h3 heading
     const titleText = screen.getByText('Card Title Content');
-    expect(titleText.tagName.toLowerCase()).not.toMatch(/^h[1-6]$/);
+    expect(titleText.tagName.toLowerCase()).toBe('h3');
 
     // Assert headings inside children preserve sequential structure
     const h2El = screen.getByRole('heading', { level: 2 });
-    const h3El = screen.getByRole('heading', { level: 3 });
+    const h3El = screen.getByRole('heading', {
+      level: 3,
+      name: 'Secondary Subsection Level 3 Heading',
+    });
 
     expect(h2El).toHaveTextContent('Primary Section Level 2 Heading');
     expect(h3El).toHaveTextContent('Secondary Subsection Level 3 Heading');

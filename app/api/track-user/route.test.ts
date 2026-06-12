@@ -176,6 +176,12 @@ describe('POST /api/track-user', () => {
     expect(response.headers.get('x-ratelimit-reset')).toBe(reset.toString());
   });
 
+  it('applies rate limiting to localhost requests', async () => {
+    await POST(makeRequest({ username: 'valid-user' }));
+
+    expect(trackUserRateLimiter.checkWithResult).toHaveBeenCalledWith('127.0.0.1');
+  });
+
   describe('Without MONGODB_URI (Local Development Bypass)', () => {
     it('returns 200 and bypassed flag when MONGODB_URI is undefined', async () => {
       delete process.env.MONGODB_URI;

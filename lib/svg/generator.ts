@@ -1334,7 +1334,7 @@ export function generateWrappedSVG(
         <circle cx="0" cy="0" r="14" stroke="${params.autoTheme ? 'var(--cp-accent)' : accent}" stroke-width="3" fill="none"
                 stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${strokeDashoffset.toFixed(2)}"
                 stroke-linecap="round" transform="rotate(-90)" />
-        <text x="0" y="3.5" text-anchor="middle" font-family="${statsFont}" font-size="9" font-weight="700" ${textClass}>${clampedRatio}%</text>
+        <text x="0" y="3.5" text-anchor="middle" font-family="${statsFont.replace(/"/g, "'")}" font-size="9" font-weight="700" ${textClass}>${clampedRatio}%</text>
       </g>
     </g>
   </g>
@@ -2429,7 +2429,7 @@ export function generatePulseSVG(
   </style>
 
   <defs>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="4" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />
@@ -2617,7 +2617,7 @@ function generateAutoThemePulseSVG(
   </style>
 
   <defs>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="4" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />

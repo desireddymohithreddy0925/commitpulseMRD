@@ -890,7 +890,7 @@ function DeveloperSkillsRadar({
         <Trophy size={14} className="text-amber-400" />
         Developer Skills Radar
       </h2>
-      <div className="p-6 rounded-xl bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-[rgba(255,255,255,0.08)]">
+      <div className="p-6 rounded-xl bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-[rgba(255,255,255,0.08)] text-[#A1A1AA] dark:text-white/35">
         {/* Legend */}
         <div className="flex justify-center gap-6 mb-4">
           <div className="flex items-center gap-2">
@@ -909,7 +909,7 @@ function DeveloperSkillsRadar({
             <PolarAngleAxis
               dataKey="skill"
               tick={{
-                fill: '#A1A1AA',
+                fill: 'currentColor',
                 fontSize: 11,
                 fontWeight: 600,
               }}
@@ -939,14 +939,14 @@ function DeveloperSkillsRadar({
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0a0a0a',
-                border: '1px solid rgba(255,255,255,0.1)',
+                backgroundColor: 'var(--recharts-tooltip-bg)',
+                border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '10px',
                 padding: '10px 14px',
                 fontSize: '12px',
-                color: '#fff',
+                color: 'var(--recharts-tooltip-color)',
               }}
-              itemStyle={{ color: '#e4e4e7', fontSize: '11px' }}
+              itemStyle={{ color: 'var(--recharts-tooltip-color)', fontSize: '11px' }}
             />
           </RadarChart>
         </ResponsiveContainer>
