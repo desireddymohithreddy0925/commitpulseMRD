@@ -39,10 +39,7 @@ export async function POST(request: NextRequest) {
     const body: AlertConfigRequest = await request.json();
 
     if (!body.repository) {
-      return NextResponse.json(
-        { error: 'Repository is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Repository is required' }, { status: 400 });
     }
 
     setAlertConfig(body.repository, {
@@ -65,10 +62,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Alert configuration error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update alert configuration' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update alert configuration' }, { status: 500 });
   }
 }
 

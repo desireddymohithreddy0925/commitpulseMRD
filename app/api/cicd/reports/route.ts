@@ -10,10 +10,7 @@ export async function GET(request: NextRequest) {
     const period = (searchParams.get('period') || 'daily') as 'daily' | 'weekly' | 'monthly';
 
     if (!repository) {
-      return NextResponse.json(
-        { error: 'Repository parameter is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Repository parameter is required' }, { status: 400 });
     }
 
     if (!['daily', 'weekly', 'monthly'].includes(period)) {
@@ -33,9 +30,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Report generation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate report' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 });
   }
 }
