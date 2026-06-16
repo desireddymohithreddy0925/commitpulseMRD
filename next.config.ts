@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   serverExternalPackages: ['next/og', '@resvg/resvg-js'],
-  allowedDevOrigins: ['172.31.128.1'],
+  allowedDevOrigins: process.env.NEXT_ALLOWED_DEV_ORIGINS
+    ? process.env.NEXT_ALLOWED_DEV_ORIGINS.split(',')
+    : [],
   devIndicators: false,
   async headers() {
     return [
