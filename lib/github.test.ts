@@ -121,8 +121,8 @@ describe('fetchGitHubContributions', () => {
     const result = await fetchGitHubContributions('octocat');
     const day = result.calendar.weeks[0].contributionDays[0];
 
-    expect(day.locAdditions).toBeGreaterThan(0);
-    expect(day.locDeletions).toBeGreaterThanOrEqual(0);
+    expect(day.locAdditions).toBeUndefined();
+    expect(day.locDeletions).toBeUndefined();
   });
 
   it('sets locAdditions and locDeletions to zero for zero-contribution days', async () => {
@@ -591,6 +591,7 @@ describe('fetchUserRepos', () => {
           id: 12345,
           private: false,
           owner: { login: 'octocat' },
+          homepage: 'https://some-repo.vercel.app',
         },
       ])
     );
@@ -601,7 +602,11 @@ describe('fetchUserRepos', () => {
     expect(result[0].language).toBe('TypeScript');
     expect(result[0].id).toBeUndefined();
     expect(result[0].private).toBeUndefined();
-    expect(result[0].owner).toBeUndefined();
+    // owner and homepage are intentionally kept — required for the
+    // Production Deployments feature to resolve {owner}/{repo} paths
+    // and fall back to a configured live URL.
+    expect(result[0].owner).toEqual({ login: 'octocat' });
+    expect(result[0].homepage).toBe('https://some-repo.vercel.app');
   });
 
   it('returns a full three-repo payload with the expected star counts and languages', async () => {
@@ -819,10 +824,12 @@ describe('forceRefresh write-back', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('fetchGitHubContributions: forceRefresh writes back so a later normal read is a cache hit', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      mockResponse({
-        data: { user: { contributionsCollection: { contributionCalendar: mockCalendar } } },
-      })
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(
+        mockResponse({
+          data: { user: { contributionsCollection: { contributionCalendar: mockCalendar } } },
+        })
+      )
     );
 
     await fetchGitHubContributions('octocat', { forceRefresh: true });
@@ -1545,6 +1552,40 @@ describe('GitHub API cache behavior', () => {
     expect(results.map((result) => result.calendar.repoContributions)).toEqual([42, 42, 42]);
   });
 
+  it('does not coalesce requests when options.signal is provided', async () => {
+    const resolvers: ((response: Response) => void)[] = [];
+    vi.mocked(fetch).mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolvers.push(resolve);
+        })
+    );
+
+    const controller = new AbortController();
+    const requests = Promise.all([
+      fetchGitHubContributions('octocat'),
+      fetchGitHubContributions('octocat', { signal: controller.signal }),
+    ]);
+
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    const responseFn = () =>
+      mockResponse({
+        data: {
+          user: {
+            contributionsCollection: {
+              contributionCalendar: mockCalendar,
+              commitContributionsByRepository: [],
+            },
+          },
+        },
+      });
+    resolvers.forEach((resolve) => resolve(responseFn()));
+
+    const results = await requests;
+    expect(results.map((result) => result.calendar.repoContributions)).toEqual([42, 42]);
+  });
+
   it('refresh bypass: bypassCache=true forces a fresh fetch', async () => {
     vi.mocked(fetch).mockImplementation(async () =>
       mockResponse({
@@ -1576,6 +1617,7 @@ describe('GitHub API cache behavior', () => {
             contributionsCollection: {
               totalPullRequestContributions: prs,
               totalIssueContributions: issues,
+              totalPullRequestReviewContributions: 0,
               contributionCalendar: {
                 totalContributions: total,
                 weeks: [
@@ -1641,6 +1683,7 @@ describe('GitHub API cache behavior', () => {
             contributionsCollection: {
               totalPullRequestContributions: 0,
               totalIssueContributions: 0,
+              totalPullRequestReviewContributions: 0,
               contributionCalendar: mockCalendar,
               commitContributionsByRepository: [],
             },
@@ -2314,6 +2357,37 @@ describe('getWrappedData', () => {
 
     expect(body.variables.from).toBe('2024-01-01T00:00:00Z');
     expect(body.variables.to).toBe('2024-12-31T23:59:59Z');
+  });
+
+  it('TestCase: aligns query bounds to user timezone offset (Issue #5259)', async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const urlStr = typeof url === 'string' ? url : (url?.toString() ?? '');
+      if (urlStr.includes('/repos')) {
+        return mockResponse([]);
+      }
+      return mockResponse({
+        data: {
+          user: {
+            contributionsCollection: {
+              contributionCalendar: mockCalendar,
+            },
+          },
+        },
+      });
+    });
+
+    // For Pacific/Honolulu (UTC-10), local 2024-01-01T00:00:00 is UTC 2024-01-01T10:00:00Z
+    // and local 2024-12-31T23:59:59 is UTC 2025-01-01T09:59:59Z
+    await getWrappedData('octocat', '2024', undefined, 'Pacific/Honolulu');
+
+    const graphQLCall = vi
+      .mocked(fetch)
+      .mock.calls.find(([url]) => url.toString().includes('/graphql'));
+
+    const body = JSON.parse(graphQLCall?.[1]?.body as string);
+
+    expect(body.variables.from).toBe('2024-01-01T10:00:00Z');
+    expect(body.variables.to).toBe('2025-01-01T09:59:59Z');
   });
 
   it('falls back to the current-year date range when wrapped year is missing or partial', async () => {
