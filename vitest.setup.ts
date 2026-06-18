@@ -109,10 +109,6 @@ if (typeof window !== 'undefined' && typeof window.Storage !== 'undefined') {
 
 if (typeof globalThis.fetch !== 'undefined') {
   const originalFetch = globalThis.fetch;
-
-  // Expose the original fetch so MSW test files can restore it
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).__vitest_original_fetch = originalFetch;
   const guardedFetch = function (url: URL | RequestInfo, init?: RequestInit) {
     const urlString =
       typeof url === 'string'
