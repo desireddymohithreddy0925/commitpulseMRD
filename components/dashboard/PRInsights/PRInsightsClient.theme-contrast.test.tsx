@@ -89,6 +89,7 @@ const mockInsights: PRInsightData = {
       deletions: 80,
     },
   },
+  prs: [],
 };
 
 function mockFetchWith(data: PRInsightData = mockInsights) {
