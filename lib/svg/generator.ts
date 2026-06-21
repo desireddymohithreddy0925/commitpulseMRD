@@ -69,6 +69,12 @@ export function truncateUsername(username: string): string {
     : username;
 }
 
+export function getUsernameFontSize(username: string): number {
+  const len = username.length;
+  if (len <= 12) return 18;
+  return Math.max(10, 18 - (len - 12) * 0.5);
+}
+
 export function deterministicRandom(seed?: string | null): number {
   const safeSeed = seed || '';
   let h1 = 0xdeadbeef;
@@ -639,6 +645,7 @@ function renderFooter(
   isWinner?: boolean
 ): string {
   const s = createScaler(sf);
+  const fs = (n: number): number => Math.round(n * sf * 10) / 10;
   const statsOffset = params.label === false ? -40 : 0;
 
   // Static themes do not define the .cp-accent-fill CSS rule, so the scan line needs an
@@ -658,7 +665,7 @@ function renderFooter(
 
   ${
     !params.hide_title && params.label !== false
-      ? `<text x="${s(300)}" y="${s(50)}" text-anchor="middle" class="title">${titleText}</text>`
+      ? `<text x="${s(300)}" y="${s(50)}" text-anchor="middle" class="title" font-size="${fs(getUsernameFontSize(truncateUsername(safeUser)))}" style="font-size: ${fs(getUsernameFontSize(truncateUsername(safeUser)))}px;">${titleText}</text>`
       : ''
   }
   <rect
@@ -1014,7 +1021,7 @@ function generateAutoThemeSVG(
   ${!params.hide_stats ? renderStatsSection(stats, labels, s, params) : ''}
 ${
   !params.hide_title && params.label !== false
-    ? `<text x="${s(300)}" y="${s(50)}" text-anchor="middle" class="title">${truncateUsername(safeUser).toUpperCase()}${params.isOfflineFallback ? '<tspan fill="#ff9f43" font-size="10px" font-weight="bold"> [STALE CACHE]</tspan>' : ''}</text>`
+    ? `<text x="${s(300)}" y="${s(50)}" text-anchor="middle" class="title" font-size="${fs(getUsernameFontSize(truncateUsername(safeUser)))}" style="font-size: ${fs(getUsernameFontSize(truncateUsername(safeUser)))}px;">${truncateUsername(safeUser).toUpperCase()}${params.isOfflineFallback ? '<tspan fill="#ff9f43" font-size="10px" font-weight="bold"> [STALE CACHE]</tspan>' : ''}</text>`
     : ''
 }
 ${renderRadarScan(params.speed, sf, '', true)}
@@ -2065,7 +2072,7 @@ export function generateNotFoundSVG(
 
   <rect x="100" y="80" width="400" height="1" class="scan-line" fill="${accent}" fill-opacity="0.12" style="--scan-speed: ${safeSpeed};"/>
 
-  <text x="300" y="50" text-anchor="middle" class="title">${safeName}</text>
+  <text x="300" y="50" text-anchor="middle" class="title" font-size="${getUsernameFontSize(truncateUsername(sanitizedUsername))}" style="font-size: ${getUsernameFontSize(truncateUsername(sanitizedUsername))}px;">${escapeXML(truncateUsername(sanitizedUsername).toUpperCase())}</text>
 
   <rect x="180" y="62" width="240" height="1" fill="${accent}" fill-opacity="0.15"/>
 
@@ -2469,7 +2476,7 @@ export function generatePulseSVG(
   <line x1="${paddingX}" y1="${paddingYTop}" x2="${width - paddingX}" y2="${paddingYTop}" stroke="${text}" stroke-width="0.75" stroke-opacity="0.05" />
   <line x1="${paddingX}" y1="${paddingYTop + graphHeight}" x2="${width - paddingX}" y2="${paddingYTop + graphHeight}" stroke="${text}" stroke-width="0.75" stroke-opacity="0.05" />
 
-  ${!params.hide_title ? `<text x="30" y="38" class="title">${safeUser.toUpperCase()}${params.isOfflineFallback ? '<tspan fill="#ff9f43" font-size="10px" font-weight="bold"> [STALE CACHE]</tspan>' : ''}</text>` : ''}
+  ${!params.hide_title ? `<text x="30" y="38" class="title" font-size="${getUsernameFontSize(truncateUsername(safeUser))}" style="font-size: ${getUsernameFontSize(truncateUsername(safeUser))}px;">${truncateUsername(safeUser).toUpperCase()}${params.isOfflineFallback ? '<tspan fill="#ff9f43" font-size="10px" font-weight="bold"> [STALE CACHE]</tspan>' : ''}</text>` : ''}
   ${
     !params.hide_stats
       ? `
@@ -2658,7 +2665,7 @@ function generateAutoThemePulseSVG(
   <line x1="${paddingX}" y1="${paddingYTop}" x2="${width - paddingX}" y2="${paddingYTop}" stroke="var(--cp-text)" stroke-width="0.75" stroke-opacity="0.05" />
   <line x1="${paddingX}" y1="${paddingYTop + graphHeight}" x2="${width - paddingX}" y2="${paddingYTop + graphHeight}" stroke="var(--cp-text)" stroke-width="0.75" stroke-opacity="0.05" />
 
-  ${!params.hide_title ? `<text x="30" y="38" class="title">${safeUser.toUpperCase()}${params.isOfflineFallback ? '<tspan fill="#ff9f43" font-size="10px" font-weight="bold"> [STALE CACHE]</tspan>' : ''}</text>` : ''}
+  ${!params.hide_title ? `<text x="30" y="38" class="title" font-size="${getUsernameFontSize(truncateUsername(safeUser))}" style="font-size: ${getUsernameFontSize(truncateUsername(safeUser))}px;">${truncateUsername(safeUser).toUpperCase()}${params.isOfflineFallback ? '<tspan fill="#ff9f43" font-size="10px" font-weight="bold"> [STALE CACHE]</tspan>' : ''}</text>` : ''}
   ${
     !params.hide_stats
       ? `
@@ -3042,7 +3049,7 @@ function renderSkylineSVG(
 
   ${groundLine}
 
-  ${!params.hide_title ? `<text x="30" y="38" class="title">${safeUser}</text>` : ''}
+  ${!params.hide_title ? `<text x="30" y="38" class="title" font-size="${getUsernameFontSize(truncateUsername(safeUser))}" style="font-size: ${getUsernameFontSize(truncateUsername(safeUser))}px;">${truncateUsername(safeUser)}</text>` : ''}
   ${
     !params.hide_stats
       ? `
