@@ -20,7 +20,7 @@ export interface ContributionReplayProps {
 
 export default function ContributionReplay({ activity = [] }: ContributionReplayProps) {
   const { t } = useTranslation();
-  
+
   // Controls state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
@@ -31,7 +31,7 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
   const processedData = useMemo(() => {
     const activityList = activity || [];
     const sorted = [...activityList].sort((a, b) => a.date.localeCompare(b.date));
-    
+
     // Group by month YYYY-MM
     const monthsMap = new Map<string, { commits: number; items: ActivityData[] }>();
     let peakDay = { date: '', count: 0 };
@@ -42,7 +42,7 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
       if (!monthsMap.has(key)) {
         monthsMap.set(key, { commits: 0, items: [] });
       }
-      
+
       const group = monthsMap.get(key)!;
       group.commits += item.count || 0;
       group.items.push(item);
@@ -52,37 +52,59 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
       }
     });
 
-    const monthsList: MonthData[] = Array.from(monthsMap.entries()).map(([monthKey, data]) => {
-      let label = monthKey;
-      let fullLabel = monthKey;
-      
-      const parts = monthKey.split('-');
-      if (parts.length === 2) {
-        const year = parts[0];
-        const monthNum = parseInt(parts[1], 10);
-        const monthNames = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
-        const fullMonthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const idx = monthNum - 1;
-        if (idx >= 0 && idx < 12) {
-          label = `${monthNames[idx]} '${year.substring(2)}`;
-          fullLabel = `${fullMonthNames[idx]} ${year}`;
-        }
-      }
+    const monthsList: MonthData[] = Array.from(monthsMap.entries())
+      .map(([monthKey, data]) => {
+        let label = monthKey;
+        let fullLabel = monthKey;
 
-      return {
-        monthKey,
-        label,
-        fullLabel,
-        commits: data.commits,
-        activityItems: data.items,
-      };
-    }).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+        const parts = monthKey.split('-');
+        if (parts.length === 2) {
+          const year = parts[0];
+          const monthNum = parseInt(parts[1], 10);
+          const monthNames = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ];
+          const fullMonthNames = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ];
+          const idx = monthNum - 1;
+          if (idx >= 0 && idx < 12) {
+            label = `${monthNames[idx]} '${year.substring(2)}`;
+            fullLabel = `${fullMonthNames[idx]} ${year}`;
+          }
+        }
+
+        return {
+          monthKey,
+          label,
+          fullLabel,
+          commits: data.commits,
+          activityItems: data.items,
+        };
+      })
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
 
     // Calculate cumulative sums
     const accumulatedCommits: number[] = [];
@@ -167,13 +189,16 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
   // Empty state boundary check
   if (monthsList.length === 0) {
     return (
-      <div 
-        role="region" 
+      <div
+        role="region"
         aria-labelledby="replay-empty-title"
         className="p-8 rounded-xl bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-[rgba(255,255,255,0.08)] text-center shadow-lg backdrop-blur-md"
       >
         <Calendar size={32} className="mx-auto mb-3 text-neutral-400 dark:text-neutral-600" />
-        <h3 id="replay-empty-title" className="text-base font-semibold text-gray-900 dark:text-white">
+        <h3
+          id="replay-empty-title"
+          className="text-base font-semibold text-gray-900 dark:text-white"
+        >
           {t('dashboard.replay.title')}
         </h3>
         <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
@@ -214,9 +239,7 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
             <Calendar size={18} className="text-indigo-500" />
             {t('dashboard.replay.title')}
           </h2>
-          <p className="mt-1 text-xs text-[#A1A1AA]">
-            {t('dashboard.replay.subtitle')}
-          </p>
+          <p className="mt-1 text-xs text-[#A1A1AA]">{t('dashboard.replay.subtitle')}</p>
         </div>
 
         {/* Peak Activity Indicator */}
@@ -270,26 +293,28 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
             <h3 className="text-xs font-semibold text-[#A1A1AA] mb-4 uppercase tracking-wider">
               {activeMonth.fullLabel} — Daily Rhythm
             </h3>
-            
+
             {activeMonth.activityItems.length === 0 ? (
               <p className="text-xs text-neutral-400 dark:text-neutral-500 italic py-8 text-center">
                 {t('dashboard.replay.no_activity')}
               </p>
             ) : (
-              <div 
+              <div
                 className="grid grid-cols-7 gap-1 md:gap-1.5 max-w-sm mx-auto my-2"
                 role="img"
                 aria-label={`Mini contribution calendar grid for ${activeMonth.fullLabel}`}
               >
                 {activeMonth.activityItems.map((day, idx) => {
-                  let colorClass = 'bg-neutral-100 dark:bg-neutral-800/50 border border-transparent';
+                  let colorClass =
+                    'bg-neutral-100 dark:bg-neutral-800/50 border border-transparent';
                   if (day.count > 0) {
                     if (day.intensity <= 1) {
                       colorClass = 'bg-indigo-500/20 border border-indigo-500/10 text-indigo-400';
                     } else if (day.intensity <= 3) {
                       colorClass = 'bg-indigo-500/50 border border-indigo-500/20 text-indigo-300';
                     } else {
-                      colorClass = 'bg-indigo-500 border border-indigo-400 text-white shadow-[0_0_8px_rgba(99,102,241,0.4)]';
+                      colorClass =
+                        'bg-indigo-500 border border-indigo-400 text-white shadow-[0_0_8px_rgba(99,102,241,0.4)]';
                     }
                   }
 
@@ -311,15 +336,21 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
           <div className="mt-4 pt-4 border-t border-neutral-200/50 dark:border-neutral-800/40 flex justify-around text-[11px] text-[#A1A1AA]">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500/20" />
-              <span>{t('dashboard.replay.intensity_low')}: {activeMonthBreakdown.low}</span>
+              <span>
+                {t('dashboard.replay.intensity_low')}: {activeMonthBreakdown.low}
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500/50" />
-              <span>{t('dashboard.replay.intensity_medium')}: {activeMonthBreakdown.medium}</span>
+              <span>
+                {t('dashboard.replay.intensity_medium')}: {activeMonthBreakdown.medium}
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-indigo-50 shadow-[0_0_6px_rgba(99,102,241,0.4)]" />
-              <span>{t('dashboard.replay.intensity_high')}: {activeMonthBreakdown.high}</span>
+              <span>
+                {t('dashboard.replay.intensity_high')}: {activeMonthBreakdown.high}
+              </span>
             </div>
           </div>
         </div>
@@ -330,10 +361,13 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
             <h3 className="text-xs font-semibold text-[#A1A1AA] mb-4 uppercase tracking-wider">
               {t('dashboard.replay.monthly_total')} Breakdown
             </h3>
-            
+
             <div className="flex items-end justify-between gap-2 h-28 pt-4 pb-2">
               {monthsList.map((m, idx) => {
-                const heightPercentage = Math.max(10, Math.min(100, (m.commits / maxMonthCommits) * 100));
+                const heightPercentage = Math.max(
+                  10,
+                  Math.min(100, (m.commits / maxMonthCommits) * 100)
+                );
                 const isActive = idx === currentMonthIndex;
                 const isPassed = idx <= currentMonthIndex;
 
@@ -351,8 +385,8 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
                           isActive
                             ? 'bg-gradient-to-t from-violet-600 to-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.6)]'
                             : isPassed
-                            ? 'bg-indigo-500/60 group-hover:bg-indigo-500/80'
-                            : 'bg-neutral-200 dark:bg-neutral-800 group-hover:bg-neutral-300 dark:group-hover:bg-neutral-700'
+                              ? 'bg-indigo-500/60 group-hover:bg-indigo-500/80'
+                              : 'bg-neutral-200 dark:bg-neutral-800 group-hover:bg-neutral-300 dark:group-hover:bg-neutral-700'
                         }`}
                         style={{ height: `${heightPercentage}%` }}
                       />
@@ -376,7 +410,9 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-[#A1A1AA] px-1 font-mono">
             <span>{activeMonth.fullLabel}</span>
-            <span>{currentMonthIndex + 1} / {monthsList.length}</span>
+            <span>
+              {currentMonthIndex + 1} / {monthsList.length}
+            </span>
           </div>
           <input
             type="range"
@@ -436,7 +472,7 @@ export default function ContributionReplay({ activity = [] }: ContributionReplay
       </div>
 
       {/* Horizontal Month Navigation Bar */}
-      <div 
+      <div
         className="mt-6 flex overflow-x-auto gap-2 no-scrollbar scroll-smooth py-2 px-1 border-t border-neutral-100 dark:border-neutral-900"
         role="navigation"
         aria-label="Replay months list navigation"

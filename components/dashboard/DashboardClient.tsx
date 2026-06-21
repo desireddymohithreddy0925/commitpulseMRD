@@ -357,9 +357,7 @@ export default function DashboardClient({
     ...(initialData.pinnedRepos || []),
     ...(initialData.starredRepos || []),
   ];
-  const deduplicatedRepos = Array.from(
-    new Map(allRepos.map((repo) => [repo.name, repo])).values()
-  );
+  const deduplicatedRepos = Array.from(new Map(allRepos.map((repo) => [repo.name, repo])).values());
 
   const compareUser1 = {
     profile: initialData.profile,
@@ -370,23 +368,25 @@ export default function DashboardClient({
     popularRepos: deduplicatedRepos,
   };
 
-  const compareUser2 = secondUserData ? {
-    profile: secondUserData.profile,
-    stats: secondUserData.stats,
-    languages: secondUserData.languages,
-    activity: secondUserData.activity,
-    achievements: secondUserData.achievements,
-    popularRepos: [
-      ...(secondUserData.popularRepos || []),
-      ...(secondUserData.pinnedRepos || []),
-      ...(secondUserData.starredRepos || []),
-    ].reduce((acc: Repository[], repo) => {
-      if (!acc.some((r) => r.name === repo.name)) {
-        acc.push(repo);
+  const compareUser2 = secondUserData
+    ? {
+        profile: secondUserData.profile,
+        stats: secondUserData.stats,
+        languages: secondUserData.languages,
+        activity: secondUserData.activity,
+        achievements: secondUserData.achievements,
+        popularRepos: [
+          ...(secondUserData.popularRepos || []),
+          ...(secondUserData.pinnedRepos || []),
+          ...(secondUserData.starredRepos || []),
+        ].reduce((acc: Repository[], repo) => {
+          if (!acc.some((r) => r.name === repo.name)) {
+            acc.push(repo);
+          }
+          return acc;
+        }, []),
       }
-      return acc;
-    }, []),
-  } : null;
+    : null;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -800,7 +800,10 @@ export default function DashboardClient({
 
             <AIInsights insights={initialData.insights} />
 
-            <ContributionForecast activity={initialData.activity} totalContributions={initialData.stats.totalContributions} />
+            <ContributionForecast
+              activity={initialData.activity}
+              totalContributions={initialData.stats.totalContributions}
+            />
 
             <PopularRepos
               popularRepos={initialData.popularRepos || []}

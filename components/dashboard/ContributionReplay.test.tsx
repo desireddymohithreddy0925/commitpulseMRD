@@ -62,30 +62,30 @@ describe('ContributionReplay', () => {
 
   it('renders the header title and description', () => {
     render(<ContributionReplay activity={mockActivity} />);
-    
+
     expect(screen.getByText('Contribution Replay Timeline')).toBeDefined();
     expect(screen.getByText(/Animate your coding journey/)).toBeDefined();
   });
 
   it('renders the empty state fallback when no activity data is provided', () => {
     render(<ContributionReplay activity={[]} />);
-    
+
     expect(screen.getByText('No contribution activity data available for replay.')).toBeDefined();
   });
 
   it('toggles play/pause state and correctly accumulates commits on tick', () => {
     render(<ContributionReplay activity={mockActivity} />);
-    
+
     // Initial State: Month = January 2025, Commits = 15, Accumulated = 15
     expect(screen.getAllByText('January 2025')[0]).toBeDefined();
-    
+
     // Click play button
     const playBtn = screen.getByLabelText('Play Replay');
     fireEvent.click(playBtn);
-    
+
     // Play changes to Pause button
     expect(screen.getByLabelText('Pause Replay')).toBeDefined();
-    
+
     // Tick 1 (1000ms): February 2025 (Monthly commits = 3, Accumulated commits = 18)
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -93,7 +93,7 @@ describe('ContributionReplay', () => {
     expect(screen.getAllByText('February 2025')[0]).toBeDefined();
     expect(screen.getAllByText('3')[0]).toBeDefined(); // Monthly Commits
     expect(screen.getByText('18')).toBeDefined(); // Accumulated Commits
-    
+
     // Tick 2 (1000ms): March 2025 (Monthly commits = 8, Accumulated commits = 26)
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -101,7 +101,7 @@ describe('ContributionReplay', () => {
     expect(screen.getAllByText('March 2025')[0]).toBeDefined();
     expect(screen.getAllByText('8')[0]).toBeDefined();
     expect(screen.getByText('26')).toBeDefined();
-    
+
     // Loop back: Tick 3 (1000ms) loops back to January 2025
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -111,7 +111,7 @@ describe('ContributionReplay', () => {
     // Pause the replay
     const pauseBtn = screen.getByLabelText('Pause Replay');
     fireEvent.click(pauseBtn);
-    
+
     // Advancing timers should not change active month when paused
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -121,7 +121,7 @@ describe('ContributionReplay', () => {
 
   it('resets playback index back to 0 on reset click', () => {
     render(<ContributionReplay activity={mockActivity} />);
-    
+
     // Move forward
     const playBtn = screen.getByLabelText('Play Replay');
     fireEvent.click(playBtn);
@@ -134,7 +134,7 @@ describe('ContributionReplay', () => {
     // Reset replay
     const resetBtn = screen.getByLabelText('Reset Replay');
     fireEvent.click(resetBtn);
-    
+
     expect(screen.getAllByText('January 2025')[0]).toBeDefined();
     // Timer should also be stopped
     act(() => {
@@ -145,12 +145,12 @@ describe('ContributionReplay', () => {
 
   it('updates the month on timeline manual scrub slider input change', () => {
     render(<ContributionReplay activity={mockActivity} />);
-    
+
     const scrubSlider = screen.getByLabelText('Scrub timeline months') as HTMLInputElement;
-    
+
     // Move slider to index 2 (March 2025)
     fireEvent.change(scrubSlider, { target: { value: '2' } });
-    
+
     expect(screen.getAllByText('March 2025')[0]).toBeDefined();
     expect(screen.getAllByText('8')[0]).toBeDefined(); // Monthly Commits
     expect(screen.getByText('26')).toBeDefined(); // Accumulated Commits
@@ -158,14 +158,16 @@ describe('ContributionReplay', () => {
 
   it('updates the month on speed index and speed multiplier change', () => {
     render(<ContributionReplay activity={mockActivity} />);
-    
+
     // Verify default speed label
     expect(screen.getByText('1x')).toBeDefined();
 
     // Change speed via speed slider to 2x (index 1)
-    const speedSlider = screen.getByLabelText('Select playback speed multiplier') as HTMLInputElement;
+    const speedSlider = screen.getByLabelText(
+      'Select playback speed multiplier'
+    ) as HTMLInputElement;
     fireEvent.change(speedSlider, { target: { value: '1' } });
-    
+
     expect(screen.getByText('2x')).toBeDefined();
 
     // Click play and verify tick speed is now 500ms
@@ -182,7 +184,7 @@ describe('ContributionReplay', () => {
 
   it('supports keyboard accessibility for controls and navigation', () => {
     render(<ContributionReplay activity={mockActivity} />);
-    
+
     // Controls should have tabIndex 0 and be natively focusable
     const playBtn = screen.getByLabelText('Play Replay');
     playBtn.focus();
@@ -195,7 +197,7 @@ describe('ContributionReplay', () => {
     // Month Navigation list buttons
     const monthBtns = screen.getAllByLabelText(/Jump to/);
     expect(monthBtns.length).toBeGreaterThan(0);
-    
+
     // Focus first month jump button
     monthBtns[1].focus();
     expect(document.activeElement).toBe(monthBtns[1]);
