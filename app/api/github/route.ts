@@ -2,7 +2,7 @@
 
 import { NextResponse, after } from 'next/server';
 import { getFullDashboardData } from '@/lib/github';
-import { githubParamsSchema } from '@/lib/validations';
+import { githubParamsSchema, coerceQueryParams } from '@/lib/validations';
 import { getClientIp } from '@/utils/getClientIp';
 import { quotaMonitor } from '@/services/github/quota-monitor';
 import { refreshPolicy } from '@/services/github/refresh-policy';
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const ip = getClientIp(request);
 
-  const parseResult = githubParamsSchema.safeParse(Object.fromEntries(searchParams.entries()));
+  const parseResult = githubParamsSchema.safeParse(coerceQueryParams(searchParams));
 
   if (!parseResult.success) {
     return NextResponse.json(

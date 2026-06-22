@@ -11,6 +11,32 @@ import {
 } from './svg/sanitizer';
 import { themes } from './svg/themes';
 
+export function coerceQueryParams(
+  params: URLSearchParams | Record<string, string | string[] | undefined>
+): Record<string, string | undefined> {
+  const coerced: Record<string, string | undefined> = {};
+
+  if (params instanceof URLSearchParams) {
+    for (const [key, value] of params.entries()) {
+      if (coerced[key] === undefined) {
+        coerced[key] = value;
+      }
+    }
+  } else if (params && typeof params === 'object') {
+    for (const [key, value] of Object.entries(params)) {
+      if (Array.isArray(value)) {
+        coerced[key] = value[0];
+      } else if (typeof value === 'string') {
+        coerced[key] = value;
+      } else {
+        coerced[key] = undefined;
+      }
+    }
+  }
+
+  return coerced;
+}
+
 export function toBooleanFlag(val?: string): boolean {
   return val === 'true' || val === '1';
 }
