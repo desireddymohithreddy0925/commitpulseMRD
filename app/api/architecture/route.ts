@@ -10,6 +10,8 @@ import { getGitHubTokens } from '@/lib/github';
 
 const execFilePromise = promisify(execFile);
 
+const REST_TIMEOUT_MS = 5000; // 5s timeout for external API requests
+
 /**
  * Strips credentials (x-access-token:...@) from error messages to prevent
  * leaking tokens into server logs.
@@ -618,24 +620,32 @@ export async function POST(req: NextRequest) {
         `;
 
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-        const response = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': geminiApiKey,
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMaxOutputTokens: 500 },
-          }),
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REST_TIMEOUT_MS);
 
-        if (response.ok) {
-          const resJson = await response.json();
-          const text = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            summary = text.trim();
+        try {
+          const response = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': geminiApiKey,
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMaxOutputTokens: 500 },
+            }),
+            signal: controller.signal,
+          });
+
+          if (response.ok) {
+            const resJson = await response.json();
+            const text = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              summary = text.trim();
+            }
           }
+        } finally {
+          clearTimeout(timeoutId);
         }
       } catch (err) {
         console.warn('Gemini summary generation failed. Falling back to rules-based summary.', err);
