@@ -7,6 +7,8 @@ import os from 'os';
 import * as ts from 'typescript';
 import pLimit from 'p-limit';
 import { getGitHubTokens } from '@/lib/github';
+import { auth } from '@/auth';
+import { getClientIp } from '@/utils/getClientIp';
 
 const execFilePromise = promisify(execFile);
 
@@ -19,6 +21,49 @@ const REST_TIMEOUT_MS = 5000; // 5s timeout for external API requests
 function sanitizeError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
   return msg.replace(/x-access-token:[^@]+@/g, 'x-access-token:[REDACTED]@');
+}
+
+// Per-IP concurrent clone tracking (max 3 concurrent clones per IP)
+const MAX_CONCURRENT_CLONES_PER_IP = 3;
+const MAX_TEMP_DIR_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
+const activeClonesPerIP = new Map<string, number>();
+
+function incrementClones(ip: string): boolean {
+  const current = activeClonesPerIP.get(ip) || 0;
+  if (current >= MAX_CONCURRENT_CLONES_PER_IP) return false;
+  activeClonesPerIP.set(ip, current + 1);
+  return true;
+}
+
+function decrementClones(ip: string): void {
+  const current = activeClonesPerIP.get(ip) || 0;
+  if (current <= 1) {
+    activeClonesPerIP.delete(ip);
+  } else {
+    activeClonesPerIP.set(ip, current - 1);
+  }
+}
+
+/**
+ * Measures total size of a directory recursively.
+ */
+function getDirSize(dirPath: string): number {
+  let totalSize = 0;
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        totalSize += getDirSize(fullPath);
+      } else if (entry.isFile()) {
+        const stats = fs.statSync(fullPath);
+        totalSize += stats.size;
+      }
+    }
+  } catch {
+    // Ignore errors during size calculation
+  }
+  return totalSize;
 }
 
 // Supported files for parsing imports/exports
@@ -270,6 +315,22 @@ function resolveImportPath(
 
 export async function POST(req: NextRequest) {
   let tempDir = '';
+  const ip = getClientIp(req);
+
+  // Require authenticated session
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  // Check concurrent clone limit per IP
+  if (!incrementClones(ip)) {
+    return NextResponse.json(
+      { error: 'Too many concurrent requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { repoUrl } = await req.json();
 
@@ -298,6 +359,9 @@ export async function POST(req: NextRequest) {
     try {
       const env = { ...process.env } as NodeJS.ProcessEnv;
       if (token) {
+        // GIT_ASKPASS points to a script that echoes the token when git asks
+        // for credentials, keeping the token out of process arguments.
+        // The script is written to the temp directory and cleaned up with it.
         // GIT_ASKPASS points to a script that reads the token from an environment
         // variable instead of embedding it in the script body. This prevents the
         // token from persisting on disk if the process crashes.
@@ -323,6 +387,16 @@ export async function POST(req: NextRequest) {
           error: 'Failed to clone repository. Make sure the repository exists and is accessible.',
         },
         { status: 404 }
+      );
+    }
+
+    // Check disk quota - if clone is too large, abort and clean up
+    const dirSize = getDirSize(tempDir);
+    if (dirSize > MAX_TEMP_DIR_SIZE_BYTES) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      return NextResponse.json(
+        { error: 'Repository exceeds maximum allowed size (500MB).' },
+        { status: 413 }
       );
     }
 
@@ -686,5 +760,7 @@ export async function POST(req: NextRequest) {
         console.error('Failed to cleanup temp clone directory:', cleanupErr);
       }
     }
+    // Decrement concurrent clone counter
+    decrementClones(ip);
   }
 }
