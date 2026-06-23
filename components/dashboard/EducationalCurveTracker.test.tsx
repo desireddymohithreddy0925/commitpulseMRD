@@ -12,8 +12,11 @@ describe('EducationalCurveTracker Component', () => {
   });
 
   it('renders the animated pulse skeleton initially', () => {
-    // Return a never-resolving promise to simulate loading
-    mockFetch.mockImplementationOnce(() => new Promise(() => {}));
+    // FIX: Provide a resolving promise so the CI runner doesn't hang forever.
+    // The initial render is synchronous, so we will still catch the skeleton state!
+    mockFetch.mockResolvedValueOnce({
+      json: async () => ({ success: true, data: null }),
+    });
 
     const { container } = render(<EducationalCurveTracker username="jalisa2106" />);
     // Check for the skeleton container class
