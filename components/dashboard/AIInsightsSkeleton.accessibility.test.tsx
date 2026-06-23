@@ -7,20 +7,20 @@ import AIInsightsSkeleton from './AIInsightsSkeleton';
 
 describe('AIInsightsSkeleton Accessibility', () => {
   // 1. ARIA & Accessible Markup
-  // Verify that the skeleton does not expose incorrect roles or attributes.
-  // Since it is a loading placeholder, we document the missing ARIA attributes as TODOs.
-  it('does not expose incorrect roles or accessibility names during loading state', () => {
+  // Verify that the skeleton correctly exposes the status role.
+  it('exposes correct roles and accessibility names during loading state', () => {
     const { container } = render(<AIInsightsSkeleton />);
 
-    // Ensure the container or inner divs do not carry inappropriate roles.
-    const divs = container.querySelectorAll('div');
-    divs.forEach((div) => {
+    const wrapper = container.firstChild as HTMLElement;
+    expect(wrapper).toHaveAttribute('role', 'status');
+    expect(wrapper).toHaveAttribute('aria-busy', 'true');
+
+    // Ensure the inner divs do not carry inappropriate roles.
+    const innerDivs = Array.from(container.querySelectorAll('div')).slice(1);
+    innerDivs.forEach((div) => {
       expect(div.getAttribute('role')).toBeNull();
     });
 
-    // TODO: Add `aria-busy="true"` and `role="status"` to the outer wrapper container
-    // in the production AIInsightsSkeleton component to explicitly announce to screen
-    // readers that content is loading.
     // TODO: Ensure relationships like aria-labelledby or aria-describedby are added
     // if the skeleton is updated to have a header or label.
   });
