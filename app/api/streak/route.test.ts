@@ -318,7 +318,10 @@ describe('GET /api/streak', () => {
 
     it('forwards the username to fetchGitHubContributions', async () => {
       await GET(makeRequest({ user: 'octocat' }));
-      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({ bypassCache: false }));
+      expect(fetchGitHubContributions).toHaveBeenCalledWith(
+        'octocat',
+        expect.objectContaining({ bypassCache: false })
+      );
     });
 
     it('forwards grace parameter to fetchGitHubContributions', async () => {
@@ -453,7 +456,10 @@ describe('GET /api/streak', () => {
 
     it('passes bypassCache=true when refresh=true', async () => {
       await GET(makeRequest({ user: 'octocat', refresh: 'true' }));
-      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({ bypassCache: true }));
+      expect(fetchGitHubContributions).toHaveBeenCalledWith(
+        'octocat',
+        expect.objectContaining({ bypassCache: true })
+      );
     });
 
     it('keeps normal caching when refresh is "false"', async () => {
@@ -597,20 +603,26 @@ describe('GET /api/streak', () => {
 
     it('passes correct from/to range when ?year=2023 is provided', async () => {
       await GET(makeRequest({ user: 'octocat', year: '2023' }));
-      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({
-        bypassCache: false,
-        from: '2023-01-01T00:00:00Z',
-        to: '2023-12-31T23:59:59Z',
-      }));
+      expect(fetchGitHubContributions).toHaveBeenCalledWith(
+        'octocat',
+        expect.objectContaining({
+          bypassCache: false,
+          from: '2023-01-01T00:00:00Z',
+          to: '2023-12-31T23:59:59Z',
+        })
+      );
     });
 
     it('passes correct from/to range when ?year=2008 is provided', async () => {
       await GET(makeRequest({ user: 'octocat', year: '2008' }));
-      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({
-        bypassCache: false,
-        from: '2008-01-01T00:00:00Z',
-        to: '2008-12-31T23:59:59Z',
-      }));
+      expect(fetchGitHubContributions).toHaveBeenCalledWith(
+        'octocat',
+        expect.objectContaining({
+          bypassCache: false,
+          from: '2008-01-01T00:00:00Z',
+          to: '2008-12-31T23:59:59Z',
+        })
+      );
     });
 
     it('returns 400 when custom from date is after custom to date', async () => {
@@ -1127,11 +1139,14 @@ describe('GET /api/streak', () => {
         // The expected prev month (May 2026) start is 2026-05-01.
         // So 'from' should be widened to 2026-05-01T00:00:00Z.
         // 'to' should be today's date in ISO: 2026-06-02T12:00:00.000Z.
-        expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({
-          bypassCache: false,
-          from: '2026-05-01T00:00:00Z',
-          to: '2026-06-02T12:00:00.000Z',
-        }));
+        expect(fetchGitHubContributions).toHaveBeenCalledWith(
+          'octocat',
+          expect.objectContaining({
+            bypassCache: false,
+            from: '2026-05-01T00:00:00Z',
+            to: '2026-06-02T12:00:00.000Z',
+          })
+        );
       } finally {
         vi.useRealTimers();
       }
@@ -1164,11 +1179,14 @@ describe('GET /api/streak', () => {
         );
 
         expect(response.status).toBe(200);
-        expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({
-          bypassCache: false,
-          from: '2024-01-01T00:00:00Z',
-          to: '2024-12-31T23:59:59Z',
-        }));
+        expect(fetchGitHubContributions).toHaveBeenCalledWith(
+          'octocat',
+          expect.objectContaining({
+            bypassCache: false,
+            from: '2024-01-01T00:00:00Z',
+            to: '2024-12-31T23:59:59Z',
+          })
+        );
 
         const body = await response.text();
         expect(body).toContain('DECEMBER');
@@ -1596,13 +1614,19 @@ describe('GET /api/streak', () => {
     it('returns 200 and accepts grace=0 (minimum boundary)', async () => {
       const response = await GET(makeRequest({ user: 'octocat', grace: '0' }));
       expect(response.status).toBe(200);
-      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({ bypassCache: false }));
+      expect(fetchGitHubContributions).toHaveBeenCalledWith(
+        'octocat',
+        expect.objectContaining({ bypassCache: false })
+      );
     });
 
     it('returns 200 and accepts grace=7 (maximum boundary)', async () => {
       const response = await GET(makeRequest({ user: 'octocat', grace: '7' }));
       expect(response.status).toBe(200);
-      expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({ bypassCache: false }));
+      expect(fetchGitHubContributions).toHaveBeenCalledWith(
+        'octocat',
+        expect.objectContaining({ bypassCache: false })
+      );
     });
 
     it('clamps grace=8 to 7', async () => {

@@ -63,9 +63,12 @@ describe('ApiStreakRoute Tests', () => {
     const json = await response.json();
     expect(json.user).toBe('octocat');
     expect(json.stats.totalContributions).toBe(120);
-    expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({
-      bypassCache: false,
-    }));
+    expect(fetchGitHubContributions).toHaveBeenCalledWith(
+      'octocat',
+      expect.objectContaining({
+        bypassCache: false,
+      })
+    );
   });
 
   it('handles ETag / If-None-Match and returns 304 Not Modified', async () => {
@@ -100,9 +103,12 @@ describe('ApiStreakRoute Tests', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate');
     expect(response.headers.get('X-Cache-Status')).toContain('BYPASS');
-    expect(fetchGitHubContributions).toHaveBeenCalledWith('octocat', expect.objectContaining({
-      bypassCache: true,
-    }));
+    expect(fetchGitHubContributions).toHaveBeenCalledWith(
+      'octocat',
+      expect.objectContaining({
+        bypassCache: true,
+      })
+    );
   });
 
   it('returns SVG image content with Content-Security-Policy header by default', async () => {
