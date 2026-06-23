@@ -35,7 +35,12 @@ function getHeaders(userToken?: string) {
   };
 }
 
-async function fetchAllPages<T>(url: string, perPage = 100, userToken?: string): Promise<T[]> {
+async function fetchAllPages<T>(
+  url: string,
+  perPage = 100,
+  userToken?: string,
+  signal?: AbortSignal
+): Promise<T[]> {
   const results: T[] = [];
   let page = 1;
   let hasMore = true;
@@ -45,6 +50,7 @@ async function fetchAllPages<T>(url: string, perPage = 100, userToken?: string):
     const res = await fetchWithRetry(paginatedUrl, {
       headers: getHeaders(userToken),
       cache: 'no-store',
+      signal,
     });
     if (!res.ok) break;
     const data = await res.json();
@@ -66,13 +72,22 @@ interface RepoInfo {
   parent?: { owner: { login: string }; name: string };
 }
 
-async function fetchUserRepos(username: string, userToken?: string): Promise<RepoInfo[]> {
+async function fetchUserRepos(
+  username: string,
+  userToken?: string,
+  signal?: AbortSignal
+): Promise<RepoInfo[]> {
   const repos = await fetchAllPages<{
     name: string;
     owner: { login: string };
     fork: boolean;
     parent?: { owner: { login: string }; name: string };
-  }>(`${GITHUB_REST_URL}/users/${encodeURIComponent(username)}/repos?sort=pushed`, 100, userToken);
+  }>(
+    `${GITHUB_REST_URL}/users/${encodeURIComponent(username)}/repos?sort=pushed`,
+    100,
+    userToken,
+    signal
+  );
   return repos.map((r) => ({
     name: r.name,
     owner: r.owner.login,
@@ -85,7 +100,8 @@ async function fetchActionsPages<T>(
   url: string,
   dataField: string,
   perPage = 50,
-  userToken?: string
+  userToken?: string,
+  signal?: AbortSignal
 ): Promise<T[]> {
   const results: T[] = [];
   let page = 1;
@@ -95,6 +111,7 @@ async function fetchActionsPages<T>(
     const res = await fetchWithRetry(paginatedUrl, {
       headers: getHeaders(userToken),
       cache: 'no-store',
+      signal,
     });
     if (!res.ok) break;
     const body = await res.json();
@@ -111,7 +128,8 @@ async function fetchWorkflowRuns(
   owner: string,
   repo: string,
   label?: string,
-  userToken?: string
+  userToken?: string,
+  signal?: AbortSignal
 ): Promise<{
   runs: CIWorkflowRun[];
   workflows: CIWorkflow[];
@@ -134,12 +152,12 @@ async function fetchWorkflowRuns(
       event: string;
       html_url: string;
       run_duration_ms?: number;
-    }>(runsUrl, 'workflow_runs', 50, userToken),
+    }>(runsUrl, 'workflow_runs', 50, userToken, signal),
     fetchActionsPages<{
       id: number;
       name: string;
       state: string;
-    }>(workflowsUrl, 'workflows', 50, userToken),
+    }>(workflowsUrl, 'workflows', 50, userToken, signal),
   ]);
 
   const branches = new Set<string>();
@@ -369,23 +387,25 @@ function buildInsights(runs: CIWorkflowRun[]): CIInsights {
 
 export async function fetchCIAnalytics(
   username: string,
-  userToken?: string
+  userToken?: string,
+  signal?: AbortSignal
 ): Promise<CIAnalyticsData> {
   const cacheKey = `ci-analytics:${username.toLowerCase()}`;
   const CACHE_TTL_MS = 10 * 60 * 1000;
 
   return cache.getOrSet(
     cacheKey,
-    async () => fetchCIAnalyticsUncached(username, userToken),
+    async () => fetchCIAnalyticsUncached(username, userToken, signal),
     CACHE_TTL_MS
   );
 }
 
 async function fetchCIAnalyticsUncached(
   username: string,
-  userToken?: string
+  userToken?: string,
+  signal?: AbortSignal
 ): Promise<CIAnalyticsData> {
-  const repos = await fetchUserRepos(username, userToken);
+  const repos = await fetchUserRepos(username, userToken, signal);
 
   if (repos.length === 0) {
     return buildEmptyData();
@@ -413,7 +433,7 @@ async function fetchCIAnalyticsUncached(
   }
 
   const results = await Promise.allSettled(
-    fetchTargets.map((t) => fetchWorkflowRuns(t.owner, t.repo, t.label, userToken))
+    fetchTargets.map((t) => fetchWorkflowRuns(t.owner, t.repo, t.label, userToken, signal))
   );
 
   for (const result of results) {
