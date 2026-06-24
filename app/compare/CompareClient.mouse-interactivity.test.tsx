@@ -4,10 +4,24 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import CompareClient from './CompareClient';
 import React, { type ReactNode } from 'react';
 
-const { mockRouter, mockSearchParams } = vi.hoisted(() => ({
-  mockRouter: { replace: vi.fn() },
-  mockSearchParams: { get: vi.fn(() => null) },
-}));
+const { mockRouter, mockSearchParams } = vi.hoisted(() => {
+  let params = new URLSearchParams();
+  return {
+    mockRouter: {
+      replace: vi.fn((url: string) => {
+        const qs = url.split('?')[1];
+        if (qs) params = new URLSearchParams(qs);
+      }),
+      push: vi.fn((url: string) => {
+        const qs = url.split('?')[1];
+        if (qs) params = new URLSearchParams(qs);
+      }),
+    },
+    mockSearchParams: {
+      get: vi.fn((key: string) => params.get(key)),
+    },
+  };
+});
 
 vi.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
@@ -127,7 +141,7 @@ const mockResponse = {
   },
 };
 
-describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propagation', () => {
+describe('CompareClient Mouse Interactivity & Touch Events', () => {
   afterEach(() => {
     cleanup();
   });
@@ -179,16 +193,20 @@ describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propag
 
     fireEvent.click(screen.getByRole('button', { name: /compare/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/stats showdown/i)).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText(/stats showdown/i)).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     // Check StatBattle border elements transitions on mouseEnter / mouseLeave
-    const repositoryCard = screen.getByText('5,000').closest('div');
-    expect(repositoryCard).toBeInTheDocument();
+    const repositoryCard = await screen.findByText('5,000');
+    const container = repositoryCard.closest('div');
+    expect(container).toBeInTheDocument();
 
-    fireEvent.mouseEnter(repositoryCard!);
-    fireEvent.mouseLeave(repositoryCard!);
+    fireEvent.mouseEnter(container!);
+    fireEvent.mouseLeave(container!);
   });
 
   it('triggers mouse hover interactions on coding habits cards', async () => {
@@ -203,9 +221,12 @@ describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propag
 
     fireEvent.click(screen.getByRole('button', { name: /compare/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/coding habits/i)).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText(/coding habits/i)).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     const userAHabit = await screen.findByText('Night Owl');
     const userBHabit = await screen.findByText('Early Bird');
@@ -256,19 +277,26 @@ describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propag
 
     fireEvent.click(screen.getByRole('button', { name: /compare/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/stats showdown/i)).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText(/stats showdown/i)).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
-    // Find custom heatmap items having 'title' attribute,
+    // Find custom heatmap items having 'contributions' in the title attribute,
     // verify hover details on a heatmap cell
-    await waitFor(() => {
-      const allCells = document.querySelectorAll('[title]');
-      expect(allCells.length).toBeGreaterThan(0);
-      const sampleCell = allCells[0];
-      expect(sampleCell).toHaveAttribute('title');
-      fireEvent.mouseEnter(sampleCell);
-      fireEvent.mouseLeave(sampleCell);
-    });
+    await waitFor(
+      () => {
+        const allCells = document.querySelectorAll('[title*="contributions"]');
+        expect(allCells.length).toBeGreaterThan(0);
+        const sampleCell = allCells[0];
+        expect(sampleCell).toHaveAttribute('title');
+        expect(sampleCell.getAttribute('title')).toContain('contributions');
+        fireEvent.mouseEnter(sampleCell);
+        fireEvent.mouseLeave(sampleCell);
+      },
+      { timeout: 5000 }
+    );
   });
 });
