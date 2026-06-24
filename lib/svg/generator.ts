@@ -575,16 +575,16 @@ function renderTowers(
     };
 
     towers += `
-         <g transform="translate(${towerX}, ${towerY})"${dimAttr}>
-           <g class="cp-tower interactive-tower" data-date="${escapeXML(t.date)}" data-count="${t.contributionCount}" data-metric="${escapeXML(metric)}" style="animation-delay: ${delay}s;">
-             ${animate && t.isToday ? '<animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />' : ''}
-             <title>${escapeXML(t.tooltip)}</title>
-             <path d="${paths.left}" ${leftFillAttr} fill-opacity="${leftFaceOpacity}" ${leftStrokeAttr} />
-             <path d="${paths.right}" ${rightFillAttr} fill-opacity="${rightFaceOpacity}" ${rightStrokeAttr} />
-             <path d="${paths.top}" ${finalTopFillAttr} fill-opacity="${topFaceOpacity}" ${topStrokeAttr} />
-             ${t.contributionCount > 5 ? `<path d="${paths.top}" fill="white" fill-opacity="0.2" />` : ''}
-           </g>
-         </g>`;
+        <g transform="translate(${towerX}, ${towerY})"${dimAttr}>
+          <g class="cp-tower interactive-tower" data-date="${escapeXML(t.date)}" data-count="${t.contributionCount}" data-metric="${escapeXML(metric)}" style="animation-delay: ${delay}s;">
+            ${animate && t.isToday ? '<animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />' : ''}
+            <title>${escapeXML(t.tooltip)}</title>
+            <path d="${paths.left}" ${leftFillAttr} fill-opacity="${leftFaceOpacity}" ${leftStrokeAttr} />
+            <path d="${paths.right}" ${rightFillAttr} fill-opacity="${rightFaceOpacity}" ${rightStrokeAttr} />
+            <path d="${paths.top}" ${finalTopFillAttr} fill-opacity="${topFaceOpacity}" ${topStrokeAttr} />
+            ${t.contributionCount > 5 ? `<path d="${paths.top}" fill="white" fill-opacity="0.2" />` : ''}
+          </g>
+        </g>`;
 
     if (t.contributionCount >= 10 && !params.disable_particles) {
       const pIdx = Math.min(t.intensityLevel - 1, accent.length - 1);
@@ -1295,11 +1295,11 @@ export function generateWrappedSVG(
     const paths = buildTowerPaths(scaleHeight, 0.45);
 
     bgTowersMarkup += `
-         <g transform="translate(${scaleX}, ${scaleY})">
-           <path d="${paths.left}" fill="${resolvedSolidColor}" fill-opacity="${leftFaceOpacity}" stroke="${resolvedSolidColor}" stroke-opacity="${strokeOpacity}" stroke-width="0.22" />
-           <path d="${paths.right}" fill="${resolvedSolidColor}" fill-opacity="${rightFaceOpacity}" stroke="${resolvedSolidColor}" stroke-opacity="${strokeOpacity}" stroke-width="0.22" />
-           <path d="${paths.top}" fill="${resolvedSolidColor}" fill-opacity="${topFaceOpacity}" stroke="${resolvedSolidColor}" stroke-opacity="${strokeOpacity}" stroke-width="0.22" />
-         </g>`;
+        <g transform="translate(${scaleX}, ${scaleY})">
+          <path d="${paths.left}" fill="${resolvedSolidColor}" fill-opacity="${leftFaceOpacity}" stroke="${resolvedSolidColor}" stroke-opacity="${strokeOpacity}" stroke-width="0.22" />
+          <path d="${paths.right}" fill="${resolvedSolidColor}" fill-opacity="${rightFaceOpacity}" stroke="${resolvedSolidColor}" stroke-opacity="${strokeOpacity}" stroke-width="0.22" />
+          <path d="${paths.top}" fill="${resolvedSolidColor}" fill-opacity="${topFaceOpacity}" stroke="${resolvedSolidColor}" stroke-opacity="${strokeOpacity}" stroke-width="0.22" />
+        </g>`;
   }
 
   const borderAttr = params.border
@@ -1308,13 +1308,13 @@ export function generateWrappedSVG(
 
   const autoThemeVariables = params.autoTheme
     ? `
-     :root { --cp-bg: #${AUTO_THEME_LIGHT.bg}; --cp-text: #${AUTO_THEME_LIGHT.text}; --cp-accent: #${AUTO_THEME_LIGHT.accent}; }
-     @media (prefers-color-scheme: dark) { :root { --cp-bg: #${AUTO_THEME_DARK.bg}; --cp-text: #${AUTO_THEME_DARK.text}; --cp-accent: #${dark.accent}; } }
-     .cp-bg-fill { fill: var(--cp-bg); }
-     .cp-text-fill { fill: var(--cp-text); }
-     .cp-accent-fill { fill: var(--cp-accent); }
-     .cp-accent-stroke { stroke: var(--cp-accent); }
-   `
+    :root { --cp-bg: #${AUTO_THEME_LIGHT.bg}; --cp-text: #${AUTO_THEME_LIGHT.text}; --cp-accent: #${AUTO_THEME_LIGHT.accent}; }
+    @media (prefers-color-scheme: dark) { :root { --cp-bg: #${AUTO_THEME_DARK.bg}; --cp-text: #${AUTO_THEME_DARK.text}; --cp-accent: #${AUTO_THEME_DARK.accent}; } }
+    .cp-bg-fill { fill: var(--cp-bg); }
+    .cp-text-fill { fill: var(--cp-text); }
+    .cp-accent-fill { fill: var(--cp-accent); }
+    .cp-accent-stroke { stroke: var(--cp-accent); }
+  `
     : '';
 
   const rectFill = params.autoTheme
@@ -1330,9 +1330,9 @@ export function generateWrappedSVG(
   const filterGlow =
     params.glow !== false
       ? `<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-       <feGaussianBlur stdDeviation="3.5" result="blur"/>
-       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-     </filter>`
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>`
       : '';
 
   const glowAttr = params.glow !== false ? ' filter="url(#glow)"' : '';
@@ -1744,9 +1744,9 @@ export function generateHeatmapSVG(
   const filterGlow =
     params.glow !== false
       ? `<filter id="hm-glow" x="-50%" y="-50%" width="200%" height="200%">
-       <feGaussianBlur stdDeviation="${Math.round(3 * sf)}" result="blur" />
-       <feComposite in="SourceGraphic" in2="blur" operator="over" />
-     </filter>`
+      <feGaussianBlur stdDeviation="${Math.round(3 * sf)}" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>`
       : '';
 
   return `
@@ -1871,9 +1871,9 @@ function generateAutoThemeHeatmapSVG(
   const filterGlow =
     params.glow !== false
       ? `<filter id="hm-glow" x="-50%" y="-50%" width="200%" height="200%">
-       <feGaussianBlur stdDeviation="${Math.round(3 * sf)}" result="blur" />
-       <feComposite in="SourceGraphic" in2="blur" operator="over" />
-     </filter>`
+      <feGaussianBlur stdDeviation="${Math.round(3 * sf)}" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>`
       : '';
 
   return `
@@ -2023,48 +2023,19 @@ function renderGhostTowers(
     const tx = 300 + (col - row) * 16;
     const ty = 120 + (col + row) * TILE_HEIGHT_HALF;
     ghostTowers += `
-       <g transform="translate(${tx}, ${ty - h})">
-         <path d="M0 10 L0 ${10 + h} L-16 ${h} L-16 0 Z"
-           fill="${accent}" fill-opacity="0.08"
-           stroke="${accent}" stroke-opacity="0.18" stroke-width="0.5"/>
-         <path d="M0 10 L0 ${10 + h} L16 ${h} L16 0 Z"
-           fill="${accent}" fill-opacity="0.05"
-           stroke="${accent}" stroke-opacity="0.12" stroke-width="0.5"/>
-         <path d="M0 0 L16 10 L0 20 L-16 10 Z"
-           fill="${accent}" fill-opacity="0.14"
-           stroke="${accent}" stroke-opacity="0.22" stroke-width="0.5"/>
-       </g>`;
+      <g transform="translate(${tx}, ${ty - h})">
+        <path d="M0 10 L0 ${10 + h} L-16 ${h} L-16 0 Z"
+          fill="${accent}" fill-opacity="0.08"
+          stroke="${accent}" stroke-opacity="0.18" stroke-width="0.5"/>
+        <path d="M0 10 L0 ${10 + h} L16 ${h} L16 0 Z"
+          fill="${accent}" fill-opacity="0.05"
+          stroke="${accent}" stroke-opacity="0.12" stroke-width="0.5"/>
+        <path d="M0 0 L16 10 L0 20 L-16 10 Z"
+          fill="${accent}" fill-opacity="0.14"
+          stroke="${accent}" stroke-opacity="0.22" stroke-width="0.5"/>
+      </g>`;
   }
   return `<g class="ghost-towers">${ghostTowers}</g>`;
-}
-
-/**
- * Renders the shared SVG <defs> block used by generateNotFoundSVG and
- * generateRateLimitSVG. Centralising these definitions ensures both ghost
- * city card variants always use identical filter IDs and parameters.
- *
- * Contains three definitions:
- * - #glow: feGaussianBlur at stdDeviation=5 for tower accent glow
- * - #softglow: feGaussianBlur at stdDeviation=8 for the X/warning icon
- * - #ghostFade: linearGradient that fades bg color over the tower grid
- *
- * @param bg - Background hex color string WITH leading '#' (e.g. '#0d1117')
- */
-function renderGhostDefs(bg: string): string {
-  return `<defs>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
-    <filter id="softglow" x="-80%" y="-80%" width="360%" height="360%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
-    <linearGradient id="ghostFade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="30%" stop-color="${bg}" stop-opacity="0"/>
-      <stop offset="100%" stop-color="${bg}" stop-opacity="1"/>
-    </linearGradient>
-  </defs>`;
 }
 
 export function generateNotFoundSVG(
@@ -2093,7 +2064,20 @@ export function generateNotFoundSVG(
 >
   <title id="cp-title-${safeId}">User not found — ${safeName}</title>
   <desc id="cp-desc-${safeId}">The GitHub user ${safeName} was not found or has no contribution data.</desc>
-  ${renderGhostDefs(bg)}
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="softglow" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <linearGradient id="ghostFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="30%" stop-color="${bg}" stop-opacity="0"/>
+      <stop offset="100%" stop-color="${bg}" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
 
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap');    .title  { font-family: "Syncopate", sans-serif; fill: ${text}; font-size: 18px; letter-spacing: 6px; font-weight: 400; opacity: 0.5; }
@@ -2912,12 +2896,12 @@ function renderSkylineSVG(
             const winFill = isAutoTheme ? 'var(--cp-text)' : '#ffffff';
             if (animate) {
               windowsSVG += `
-                 <rect class="cp-window cp-window-animated" style="animation-delay: ${windowDelay}s;" x="${startX[c].toFixed(1)}" y="${windowY.toFixed(1)}" width="${windowW}" height="${windowH}" fill="${winFill}" opacity="0" pointer-events="none" />
-               `;
+                <rect class="cp-window cp-window-animated" style="animation-delay: ${windowDelay}s;" x="${startX[c].toFixed(1)}" y="${windowY.toFixed(1)}" width="${windowW}" height="${windowH}" fill="${winFill}" opacity="0" pointer-events="none" />
+              `;
             } else {
               windowsSVG += `
-                 <rect class="cp-window" x="${startX[c].toFixed(1)}" y="${windowY.toFixed(1)}" width="${windowW}" height="${windowH}" fill="${winFill}" opacity="0.85" pointer-events="none" />
-               `;
+                <rect class="cp-window" x="${startX[c].toFixed(1)}" y="${windowY.toFixed(1)}" width="${windowW}" height="${windowH}" fill="${winFill}" opacity="0.85" pointer-events="none" />
+              `;
             }
           }
         }
@@ -3151,7 +3135,20 @@ export function generateRateLimitSVG(
 >
   <title id="cp-title-${safeId}">Rate Limit Exceeded</title>
   <desc id="cp-desc-${safeId}">GitHub API rate limit exceeded. Please try again later.</desc>
-  ${renderGhostDefs(bg)}
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="softglow" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <linearGradient id="ghostFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="30%" stop-color="${bg}" stop-opacity="0"/>
+      <stop offset="100%" stop-color="${bg}" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap');
@@ -3371,6 +3368,9 @@ export function generateActivityGraphSVG(
 
   const parsedRadius = Number(params.radius);
   const radius = Math.max(0, Math.min(Number.isNaN(parsedRadius) ? 8 : parsedRadius, 50));
+
+  const width = params.width || 800;
+  const height = params.height || 220;
 
   const { pathD, areaPathD, trendPathD, peakX, peakY, peakCount, peakDate, days, totalCount } =
     _buildActivityGraphData(calendar, params, width, height);
