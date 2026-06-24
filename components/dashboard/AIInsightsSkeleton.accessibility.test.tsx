@@ -84,4 +84,15 @@ describe('AIInsightsSkeleton Accessibility', () => {
     // There should be no heading elements within the loading skeleton.
     expect(screen.queryByRole('heading')).toBeNull();
   });
+
+  // 6. Reduced Motion Fallback
+  // Ensure that reduced motion users receive a non-animated fallback.
+  it('applies the appropriate shimmer class that respects reduced motion preferences', () => {
+    const { container } = render(<AIInsightsSkeleton />);
+
+    // We expect the elements that would normally shimmer to have the 'shimmer' class.
+    // The CSS @media query will handle the reduction in motion.
+    const shimmerElements = container.querySelectorAll('.shimmer');
+    expect(shimmerElements.length).toBeGreaterThan(0);
+  });
 });

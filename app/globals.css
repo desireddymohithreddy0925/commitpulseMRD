@@ -419,4 +419,10 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .shimmer {
+    animation: none;
+    background-image: none;
+    opacity: 0.6;
+  }
 }
