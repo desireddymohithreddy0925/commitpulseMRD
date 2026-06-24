@@ -9,8 +9,8 @@ describe('AIInsightsSkeleton theme contrast', () => {
     const { container } = render(<AIInsightsSkeleton />);
     const root = container.firstElementChild;
 
-    expect(root).toHaveClass('bg-[#0a0a0a]');
-    expect(root).toHaveClass('border-[rgba(255,255,255,0.08)]');
+    expect(root).toHaveClass('dark:bg-[#0a0a0a]');
+    expect(root).toHaveClass('dark:border-[rgba(255,255,255,0.08)]');
     expect(document.documentElement).toHaveClass('dark');
   });
 
@@ -20,6 +20,8 @@ describe('AIInsightsSkeleton theme contrast', () => {
     const { container } = render(<AIInsightsSkeleton />);
     const root = container.firstElementChild;
 
+    expect(root).toHaveClass('bg-zinc-50');
+    expect(root).toHaveClass('border-gray-200');
     expect(root).toHaveClass('p-6');
     expect(root).toHaveClass('rounded-xl');
     expect(document.documentElement).not.toHaveClass('dark');
@@ -36,13 +38,15 @@ describe('AIInsightsSkeleton theme contrast', () => {
 
   it('renders all insight rows with contrast-safe surfaces', () => {
     const { container } = render(<AIInsightsSkeleton />);
-    const rows = container.querySelectorAll(
-      '.bg-\\[\\#111\\].border-\\[rgba\\(255\\,255\\,255\\,0\\.05\\)\\]'
-    );
+    const rows = container.firstElementChild?.lastElementChild?.children;
 
     expect(rows).toHaveLength(3);
 
-    rows.forEach((row) => {
+    Array.from(rows || []).forEach((row) => {
+      expect(row).toHaveClass('bg-white');
+      expect(row).toHaveClass('dark:bg-[#111]');
+      expect(row).toHaveClass('border-gray-100');
+      expect(row).toHaveClass('dark:border-[rgba(255,255,255,0.05)]');
       expect(row).toHaveClass('rounded-lg');
       expect(row).toHaveClass('p-3');
     });
