@@ -48,6 +48,8 @@ describe('AIInsightsSkeleton Accessibility', () => {
     // Ensure that the skeleton wrapper exposes a descriptive aria-label.
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper).toHaveAttribute('aria-label', 'Loading AI Insights');
+    expect(wrapper).not.toHaveAttribute('aria-labelledby');
+    expect(wrapper).not.toHaveAttribute('aria-describedby');
   });
 
   // 4. Keyboard Navigation Flow
@@ -79,10 +81,17 @@ describe('AIInsightsSkeleton Accessibility', () => {
   // 5. Heading Hierarchy
   // Ensure that the skeleton does not introduce out-of-order headings before actual data loads.
   it('renders no heading elements ensuring heading hierarchy is not disrupted', () => {
-    render(<AIInsightsSkeleton />);
+    const { container } = render(<AIInsightsSkeleton />);
 
     // There should be no heading elements within the loading skeleton.
     expect(screen.queryByRole('heading')).toBeNull();
+
+    // Strict check to prevent the skeleton from improperly using heading tags (h1-h6) or bold pseudo-headings (strong, b)
+    const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    expect(headings.length).toBe(0);
+
+    const pseudoHeadings = container.querySelectorAll('strong, b');
+    expect(pseudoHeadings.length).toBe(0);
   });
 
   // 6. Reduced Motion Fallback
