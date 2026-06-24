@@ -13,13 +13,14 @@ vi.mock('@/lib/calculate', () => ({
 import { fetchGitHubContributions } from '@/lib/github';
 import { calculateStreak } from '@/lib/calculate';
 
+import { logger } from '@/lib/logger';
 describe('OG Route Empty/Missing Inputs Verification', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     vi.mocked(fetchGitHubContributions).mockResolvedValue({} as never);
 

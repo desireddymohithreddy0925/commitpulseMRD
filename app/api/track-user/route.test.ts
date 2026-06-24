@@ -3,6 +3,7 @@ import { POST } from './route';
 import { User } from '@/models/User';
 import dbConnect from '@/lib/mongodb';
 import { trackUserRateLimiter } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 // Mock dependencies
 vi.mock('@/lib/rate-limit', () => ({
@@ -205,8 +206,8 @@ describe('POST /api/track-user', () => {
     it('returns 200 and bypassed flag when MONGODB_URI is undefined', async () => {
       delete process.env.MONGODB_URI;
 
-      // Spy on console.warn
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // Spy on logger.warn
+      const consoleSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       const response = await POST(makeRequest({ username: 'octocat' }));
 

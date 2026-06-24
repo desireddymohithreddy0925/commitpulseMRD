@@ -20,9 +20,6 @@ describe('AIInsightsSkeleton Accessibility', () => {
     innerDivs.forEach((div) => {
       expect(div.getAttribute('role')).toBeNull();
     });
-
-    // TODO: Ensure relationships like aria-labelledby or aria-describedby are added
-    // if the skeleton is updated to have a header or label.
   });
 
   // 2. Keyboard Focus
@@ -86,8 +83,5 @@ describe('AIInsightsSkeleton Accessibility', () => {
 
     // There should be no heading elements within the loading skeleton.
     expect(screen.queryByRole('heading')).toBeNull();
-
-    // TODO: When the loaded state (AIInsights) is implemented/rendered, ensure its headings
-    // follow a logical order relative to the page container layout (e.g., an H3 tag).
   });
 });

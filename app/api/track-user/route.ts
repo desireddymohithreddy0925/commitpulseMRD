@@ -6,7 +6,7 @@ import { getRateLimitHeaders, trackUserRateLimiter } from '@/lib/rate-limit';
 import { trackUserProtection } from '@/services/security/track-user-protection';
 import { githubUsernameSchema } from '@/lib/validations';
 import { sanitizeMongoPayload } from '@/utils/sanitize';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_APP_URL || 'https://commitpulse.vercel.app',
