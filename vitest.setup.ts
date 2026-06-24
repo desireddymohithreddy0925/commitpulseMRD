@@ -174,3 +174,10 @@ if (typeof globalThis.fetch !== 'undefined') {
     globalThis.fetch = guardedFetch;
   });
 }
+
+// Suppress logger output during tests to keep CI logs clean
+import logger from './lib/logger';
+if (typeof logger !== 'undefined' && logger.error && logger.warn) {
+  vi.spyOn(logger, 'error').mockImplementation(() => {});
+  vi.spyOn(logger, 'warn').mockImplementation(() => {});
+}

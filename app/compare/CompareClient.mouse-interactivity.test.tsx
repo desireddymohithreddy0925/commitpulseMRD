@@ -207,9 +207,8 @@ describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propag
       expect(screen.getByText(/coding habits/i)).toBeInTheDocument();
     });
 
-    const habitCards = screen.getAllByRole('heading', { level: 3 });
-    const userAHabit = habitCards.find((c) => c.textContent === 'Night Owl');
-    const userBHabit = habitCards.find((c) => c.textContent === 'Early Bird');
+    const userAHabit = await screen.findByText('Night Owl');
+    const userBHabit = await screen.findByText('Early Bird');
 
     expect(userAHabit).toBeInTheDocument();
     expect(userBHabit).toBeInTheDocument();
