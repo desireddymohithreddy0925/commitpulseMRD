@@ -74,10 +74,10 @@ describe('theme count', () => {
       'obsidian',
       'glacier',
       'lumos',
-      'tokyonight',
+      'tokyo_night_red',
       'cyberpunk',
       'cyberpunk_neon',
-      'tokyo_night',
+      'tokyo_night_blue',
       'monokai',
       'midnight_ocean',
       'india',
@@ -257,5 +257,11 @@ describe('getNormalizedThemeKey', () => {
   it('returns default fallback gracefully when theme parameter is undefined or null', () => {
     expect(getNormalizedThemeKey(undefined)).toBe('default');
     expect(getNormalizedThemeKey(null)).toBe('default');
+  });
+
+  it('resolves legacy aliases tokyonight and tokyo_night to their new red/blue variants', () => {
+    expect(getNormalizedThemeKey('tokyonight')).toBe('tokyo_night_red');
+    expect(getNormalizedThemeKey('tokyo_night')).toBe('tokyo_night_blue');
+    expect(getNormalizedThemeKey(' TOKYONIGHT ')).toBe('tokyo_night_red');
   });
 });
