@@ -79,8 +79,17 @@ export const AUTO_THEME_DARK: BadgeTheme = themes.dark ?? themes.default;
  * Resolves a theme case-insensitively by matching the normalized user input
  * against the normalized theme registry keys. Returns the standard theme key.
  */
-export function getNormalizedThemeKey(themeInput: string | undefined | null): string {
+export function getNormalizedThemeKey(
+  themeInput: string | string[] | undefined | null | unknown
+): string {
   if (!themeInput) return 'default'; // fallback key
+
+  if (Array.isArray(themeInput)) {
+    if (themeInput.length === 0) return 'default';
+    themeInput = themeInput[0];
+  }
+
+  if (typeof themeInput !== 'string') return 'default';
 
   const target = themeInput.trim().toLowerCase();
   const matchedKey = Object.keys(themes).find((key) => key.toLowerCase() === target);
