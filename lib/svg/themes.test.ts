@@ -129,7 +129,7 @@ describe('hex validity — all theme color values must be valid 6-char hex strin
   });
 
   it('no theme has a hex value with a leading # (values must be without #)', () => {
-    for (const [name, theme] of themeEntries) {
+    for (const [, theme] of themeEntries) {
       expect(theme.bg.startsWith('#')).toBe(false);
       expect(theme.text.startsWith('#')).toBe(false);
       expect(theme.accent.startsWith('#')).toBe(false);
@@ -137,7 +137,7 @@ describe('hex validity — all theme color values must be valid 6-char hex strin
   });
 
   it('no theme has a hex value shorter than 6 characters', () => {
-    for (const [name, theme] of themeEntries) {
+    for (const [, theme] of themeEntries) {
       expect(theme.bg.length).toBeGreaterThanOrEqual(6);
       expect(theme.text.length).toBeGreaterThanOrEqual(6);
       expect(theme.accent.length).toBeGreaterThanOrEqual(6);
@@ -256,5 +256,19 @@ describe('getNormalizedThemeKey', () => {
   it('returns default fallback gracefully when theme parameter is undefined or null', () => {
     expect(getNormalizedThemeKey(undefined)).toBe('default');
     expect(getNormalizedThemeKey(null)).toBe('default');
+  });
+
+  it('safely handles array inputs by picking the first valid element', () => {
+    expect(getNormalizedThemeKey(['dark', 'light'])).toBe('dark');
+    expect(getNormalizedThemeKey(['  neon  ', 'ocean'])).toBe('neon');
+  });
+
+  it('falls back to default if array is empty', () => {
+    expect(getNormalizedThemeKey([])).toBe('default');
+  });
+
+  it('falls back to default if input is an object or number', () => {
+    expect(getNormalizedThemeKey({} as unknown)).toBe('default');
+    expect(getNormalizedThemeKey(123 as unknown)).toBe('default');
   });
 });
