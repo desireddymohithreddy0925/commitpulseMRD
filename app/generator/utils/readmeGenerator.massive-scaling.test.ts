@@ -18,6 +18,7 @@ vi.mock('../data/socials', () => ({
     iconUrl: `https://cdn.example.com/socials/${id}.svg`,
     type: 'devicon',
   }),
+  resolveSocialUrl: (social: unknown, url: string) => url,
 }));
 
 function buildState(overrides: Partial<GeneratorState> = {}): GeneratorState {

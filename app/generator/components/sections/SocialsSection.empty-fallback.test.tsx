@@ -23,6 +23,7 @@ vi.mock('../../data/socials', () => ({
     },
   ],
   SOCIAL_CATEGORIES: ['Development', 'Social'],
+  resolveSocialUrl: (social: unknown, url: string) => url,
 }));
 
 describe('SocialsSection Edge Cases & Empty/Missing Inputs Verification', () => {

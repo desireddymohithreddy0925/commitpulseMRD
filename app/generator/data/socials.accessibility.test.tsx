@@ -24,6 +24,7 @@ vi.mock('./socials', () => ({
     },
   ],
   SOCIAL_CATEGORIES: ['Development', 'Professional'],
+  resolveSocialUrl: (social: unknown, url: string) => url,
 }));
 
 describe('SocialsSection Accessibility Standards & Screen Reader Compliance', () => {
