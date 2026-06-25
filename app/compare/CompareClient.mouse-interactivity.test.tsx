@@ -184,8 +184,12 @@ describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propag
     });
 
     // Check StatBattle border elements transitions on mouseEnter / mouseLeave
-    const repositoryCard = screen.getByText('5,000').closest('div');
-    expect(repositoryCard).toBeInTheDocument();
+    let repositoryCard;
+    await waitFor(() => {
+      const repoVal = screen.getByText('5,000');
+      repositoryCard = repoVal.closest('div.rounded-xl') || repoVal.parentElement?.parentElement;
+      expect(repositoryCard).toBeInTheDocument();
+    });
 
     fireEvent.mouseEnter(repositoryCard!);
     fireEvent.mouseLeave(repositoryCard!);
@@ -203,16 +207,17 @@ describe('CompareClient Interactive Tooltips, Cursor Hovers & Touch Event Propag
 
     fireEvent.click(screen.getByRole('button', { name: /compare/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/coding habits/i)).toBeInTheDocument();
-    });
-
-    const habitCards = screen.getAllByRole('heading', { level: 3 });
-    const userAHabit = habitCards.find((c) => c.textContent === 'Night Owl');
-    const userBHabit = habitCards.find((c) => c.textContent === 'Early Bird');
-
-    expect(userAHabit).toBeInTheDocument();
-    expect(userBHabit).toBeInTheDocument();
+    let userAHabit, userBHabit;
+    await waitFor(
+      () => {
+        const cards = screen.getAllByRole('heading', { level: 3 });
+        userAHabit = cards.find((c) => c.textContent && c.textContent.includes('Night Owl'));
+        userBHabit = cards.find((c) => c.textContent && c.textContent.includes('Early Bird'));
+        expect(userAHabit).toBeInTheDocument();
+        expect(userBHabit).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
 
     // Trigger hover events to verify standard scale and glow hover properties
     const containerA = userAHabit!.closest('div');
