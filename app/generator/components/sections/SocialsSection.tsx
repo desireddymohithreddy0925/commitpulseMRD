@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Search, X, ExternalLink } from 'lucide-react';
-import { SOCIALS, SOCIAL_CATEGORIES } from '../../data/socials';
+import { SOCIALS, SOCIAL_CATEGORIES, resolveSocialUrl } from '../../data/socials';
 import { SectionCard, FieldLabel } from '../SectionCard';
 import type { Social } from '../../types';
 import Image from 'next/image';
@@ -305,13 +305,7 @@ export function SocialsSection({
                         </label>
                         {hasLink && (
                           <a
-                            href={
-                              social.id === 'email'
-                                ? `mailto:${val.replace(/^mailto:/i, '')}`
-                                : val.startsWith('http')
-                                  ? val
-                                  : `${social.baseUrl}${val}`
-                            }
+                            href={resolveSocialUrl(social, val)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="ml-auto text-emerald-500 hover:text-emerald-400"

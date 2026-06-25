@@ -606,3 +606,26 @@ export const SOCIAL_CATEGORIES: SocialCategory[] = [
 ];
 
 export const getSocialById = (id: string): Social | undefined => SOCIALS.find((s) => s.id === id);
+
+export function resolveSocialUrl(social: Social, input: string): string {
+  if (!input) return '';
+  const val = input.trim();
+  if (!val) return '';
+
+  if (social.id === 'email') {
+    return `mailto:${val.replace(/^mailto:/i, '')}`;
+  }
+
+  // If user typed a full URL, return it directly
+  if (/^https?:\/\//i.test(val)) {
+    return val;
+  }
+
+  // Handle baseUrl concatenation and prevent double '@'
+  let handle = val;
+  if (social.baseUrl.endsWith('@') && handle.startsWith('@')) {
+    handle = handle.substring(1);
+  }
+
+  return social.baseUrl + handle;
+}
