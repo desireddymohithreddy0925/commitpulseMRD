@@ -1,6 +1,6 @@
 # CommitPulse Themes
 
-All 28 available themes for your CommitPulse badge. Use the `?theme=<slug>` query parameter to apply a theme.
+All 30 available themes for your CommitPulse badge. Use the `?theme=<slug>` query parameter to apply a theme.
 
 ```
 https://commitpulse.vercel.app/api/streak?user=YOUR_USERNAME&theme=<slug>
@@ -32,8 +32,8 @@ https://commitpulse.vercel.app/api/streak?user=YOUR_USERNAME&theme=<slug>
 | nord_light       | `#eceff4`  | `#2e3440` | `#5e81ac` |
 | obsidian         | `#1a1a2e`  | `#e2e8f0` | `#f59e0b` |
 | cyber-pulse      | `#000000`  | `#ffffff` | `#00ffee` |
-| tokyonight       | `#1a1b26`  | `#c0caf5` | `#f7768e` |
-| tokyo_night      | `#1a1b26`  | `#c0caf5` | `#7aa2f7` |
+| tokyo_night_red  | `#1a1b26`  | `#c0caf5` | `#f7768e` |
+| tokyo_night_blue | `#1a1b26`  | `#c0caf5` | `#7aa2f7` |
 | cyberpunk        | `#fce22a`  | `#111111` | `#ff003c` |
 | cyberpunk_neon   | `#0d0d14`  | `#00f3ff` | `#ff0055` |
 | glacier          | `#e0f2fe`  | `#0369a1` | `#06b6d4` |
@@ -299,9 +299,9 @@ https://commitpulse.vercel.app/api/streak?user=YOUR_USERNAME&theme=<slug>
 
 ---
 
-### Tokyo Night
+### Tokyo Night Red
 
-![tokyonight](https://commitpulse.vercel.app/api/streak?user=jhasourav07&theme=tokyonight)
+![tokyo_night_red](https://commitpulse.vercel.app/api/streak?user=jhasourav07&theme=tokyo_night_red)
 
 | Parameter | Value  |
 | --------- | ------ |
@@ -337,7 +337,7 @@ https://commitpulse.vercel.app/api/streak?user=YOUR_USERNAME&theme=<slug>
 
 ### Tokyo Night Blue
 
-![tokyo_night](https://commitpulse.vercel.app/api/streak?user=jhasourav07&theme=tokyo_night)
+![tokyo_night_blue](https://commitpulse.vercel.app/api/streak?user=jhasourav07&theme=tokyo_night_blue)
 
 | Parameter | Value  |
 | --------- | ------ |
