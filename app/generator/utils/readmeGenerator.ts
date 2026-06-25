@@ -1,5 +1,5 @@
 import { getTechById } from '../data/technologies';
-import { getSocialById } from '../data/socials';
+import { getSocialById, resolveSocialUrl } from '../data/socials';
 import type { GeneratorState } from '../types';
 
 const BADGE_BASE = 'https://commitpulse.vercel.app/api/streak';
@@ -135,13 +135,8 @@ export function generateReadme(state: GeneratorState): string {
       .map((id) => {
         const social = getSocialById(id);
         if (!social) return null;
-        const rawUrl = state.socialLinks[id]?.trim() || '';
-        let resolvedUrl =
-          social.id === 'email'
-            ? `mailto:${rawUrl.replace(/^mailto:/i, '')}`
-            : rawUrl.startsWith('http')
-              ? rawUrl
-              : `${social.baseUrl || ''}${rawUrl}`;
+        const url = state.socialLinks[id] || '';
+        let resolvedUrl = resolveSocialUrl(social, url);
 
         if (social.id !== 'email' && !/^https?:\/\//i.test(resolvedUrl)) {
           resolvedUrl = `https://${resolvedUrl}`;

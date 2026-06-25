@@ -20,6 +20,7 @@ vi.mock('../../data/socials', () => {
   return {
     SOCIALS: MOCK_SOCIALS,
     SOCIAL_CATEGORIES: ['Dev', 'Design'],
+    resolveSocialUrl: (social: unknown, url: string) => url,
   };
 });
 
