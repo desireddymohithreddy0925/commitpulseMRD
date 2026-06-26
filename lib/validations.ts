@@ -46,6 +46,11 @@ export function toGlowFlag(val?: string): boolean {
   return val === 'true' || val === '1';
 }
 
+export function toMinifyFlag(val?: string): boolean {
+  if (val === undefined) return true;
+  return val === 'true' || val === '1';
+}
+
 export function toRefreshFlag(val?: string): boolean {
   return val === 'true';
 }
@@ -359,7 +364,7 @@ const baseStreakParamsSchema = z.object({
     }),
 
   // Silently fall back to 'linear' for unknown values (matches old behavior)
-  scale: z.enum(['linear', 'log']).catch('linear').default('linear'),
+  scale: z.enum(['linear', 'log', 'sqrt']).catch('linear').default('linear'),
 
   // Invalid size values fall back to 'medium' to preserve badge rendering.
   size: z.enum(['small', 'medium', 'large']).catch('medium').default('medium'),
@@ -526,6 +531,9 @@ const baseStreakParamsSchema = z.object({
 
   // Glow effect — on by default. Accepts 'true'/'1' (true) or 'false' (false).
   glow: z.string().optional().transform(toGlowFlag).default(true),
+
+  // SVG optimization — on by default. Accepts 'true'/'1' (true) or 'false' (false).
+  minify: z.string().optional().transform(toMinifyFlag).default(true),
   opacity: z.string().optional().transform(toOpacityValue),
   entrance: z
     .enum(['rise', 'fade', 'slide', 'wave', 'bounce', 'none'])

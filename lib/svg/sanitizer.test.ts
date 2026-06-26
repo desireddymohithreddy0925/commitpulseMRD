@@ -215,6 +215,10 @@ describe('SVG Sanitizer Utilities', () => {
       expect(sanitizeFont('Open Sans"')).toBe('Open Sans');
     });
 
+    it('strips single quotes to prevent SVG attribute injection (Fixes #6157)', () => {
+      expect(sanitizeFont("Test' onload='alert(1)")).toBe('Test onloadalert1');
+    });
+
     it('returns null for completely invalid font', () => {
       expect(sanitizeFont('!!!')).toBe(null);
     });

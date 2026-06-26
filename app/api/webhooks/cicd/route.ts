@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -41,7 +42,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    const event = JSON.parse(payload);
+    let event;
+    try {
+      event = JSON.parse(payload);
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
     const ciEvent = parseWebhookEvent(event);
 
     if (!ciEvent) {
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    logger.error('CI/CD webhook processing error', { error });
     return NextResponse.json({ error: 'Failed to process webhook' }, { status: 500 });
   }
 }

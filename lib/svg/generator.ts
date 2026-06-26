@@ -10,7 +10,7 @@ import type {
 import { getLabels, type BadgeLabels } from '../i18n/badgeLabels';
 import { AUTO_THEME_DARK, AUTO_THEME_LIGHT, themes } from './themes';
 import { getTowerAnimationCSS } from './animations';
-import { computeTowers, type TowerData } from './layout';
+import { computeTowers, computeTowerHeight, type TowerData } from './layout';
 import { LANGUAGE_COLORS } from './languageColors';
 import {
   sanitizeFont,
@@ -25,7 +25,15 @@ import {
   sanitizeCustomText,
 } from './sanitizer';
 
-import { GRID_ORIGIN_X, GRID_ORIGIN_Y, TILE_HEIGHT_HALF, TILE_WIDTH_HALF } from './layoutConstants';
+import {
+  GRID_ORIGIN_X,
+  GRID_ORIGIN_Y,
+  TILE_HEIGHT_HALF,
+  TILE_WIDTH_HALF,
+  MAX_LOG_HEIGHT,
+  MAX_LINEAR_HEIGHT,
+  MAX_SQRT_HEIGHT,
+} from './layoutConstants';
 
 import { SVG_WIDTH, SVG_HEIGHT, MAX_USERNAME_DISPLAY_LENGTH } from './generatorConstants';
 
@@ -2842,17 +2850,24 @@ function renderSkylineSVG(
     ? params.accent.map((c) => `#${sanitizeHexColor(c, '00ffaa')}`)
     : [accent];
 
+  const scaleParam: 'linear' | 'log' | 'sqrt' =
+    params.scale === 'log' || params.scale === 'sqrt' ? params.scale : 'linear';
+
+  const maxPossibleHeight =
+    scaleParam === 'log'
+      ? MAX_LOG_HEIGHT
+      : scaleParam === 'sqrt'
+        ? MAX_SQRT_HEIGHT
+        : MAX_LINEAR_HEIGHT;
+
   weeklyContributions.forEach((count, i) => {
     const x = paddingX + i * stepX;
 
     let normalized = 0;
     if (count > 0) {
-      if (params.scale === 'log') {
-        const logMax = Math.log2(maxWeeklyCount + 1) || 1;
-        normalized = Math.log2(count + 1) / logMax;
-      } else {
-        normalized = count / maxWeeklyCount;
-      }
+      const divisor = maxWeeklyCount || 1;
+      const towerHeight = computeTowerHeight(count, scaleParam, false, divisor);
+      normalized = towerHeight / maxPossibleHeight;
     }
 
     let h = normalized * graphHeight;
