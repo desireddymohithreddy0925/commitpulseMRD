@@ -143,7 +143,7 @@ describe('GitHub API Route - Massive Data Sets and High Bounds Scaling', () => {
 
     try {
       await GET(req);
-    } catch (e: unknown) {
+    } catch {
       // Graceful isolation boundary
     }
 
