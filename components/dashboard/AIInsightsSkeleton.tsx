@@ -3,6 +3,7 @@ export default function AIInsightsSkeleton() {
     <div
       role="status"
       aria-busy="true"
+      aria-live="polite"
       aria-label="Loading AI Insights"
       className="p-6 rounded-xl bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-[rgba(255,255,255,0.08)] overflow-hidden"
     >
