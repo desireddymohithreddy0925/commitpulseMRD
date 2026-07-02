@@ -80,7 +80,7 @@ describe('theme count', () => {
       'tokyo_night',
       'monokai',
       'midnight_ocean',
-      'india'
+      'india',
     ];
     for (const key of expectedKeys) {
       expect(themeNames).toContain(key);
