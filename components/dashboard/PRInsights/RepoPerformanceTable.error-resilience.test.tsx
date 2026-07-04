@@ -31,37 +31,46 @@ vi.mock('@/context/TranslationContext', () => ({
 }));
 
 const mockData: PRInsightData = {
+  totalPRs: 13,
+  openPRs: 2,
+  mergedPRs: 10,
+  closedPRs: 1,
+  mergeRate: 76.9,
+  avgReviewTime: 4.5,
+  avgTimeToFirstReview: 3.0,
+  avgCycleTime: 4.5,
+  weeklyActivity: [],
+  monthlyActivity: [],
+  reviewsGiven: 7,
+  reviewsReceived: 7,
+  avgReviewResponseTime: 4.5,
+  fastestReview: 1.0,
+  slowestReview: 6.0,
   repoPerformance: [
     {
       name: 'owner/repo-one',
       totalPRs: 10,
       mergeRate: 80,
       reviewCount: 5,
+      avgReviewTime: 1.8,
     },
     {
       name: 'owner/repo-two',
       totalPRs: 3,
       mergeRate: 66.7,
       reviewCount: 2,
+      avgReviewTime: 3.4,
     },
   ],
   highlights: {
-    fastestMerged: null,
-    mostDiscussed: null,
-    largest: null,
+    fastestMerged: undefined,
+    mostDiscussed: undefined,
+    largest: undefined,
   },
-  summary: {
-    totalPRs: 13,
-    mergedPRs: 10,
-    openPRs: 2,
-    closedPRs: 1,
-    avgMergeTimeHours: 4.5,
-    mergeRate: 76.9,
-  },
-  timeline: [],
+  prs: [],
 };
 
-describe('RepoPerformanceTable — error resilience', () => {
+describe('RepoPerformanceTable - error resilience', () => {
   it('renders empty state fallback UI when repoPerformance is an empty array', () => {
     const emptyData: PRInsightData = { ...mockData, repoPerformance: [] };
     render(<RepoPerformanceTable data={emptyData} />);
@@ -97,6 +106,7 @@ describe('RepoPerformanceTable — error resilience', () => {
           totalPRs: 5,
           mergeRate: 100,
           reviewCount: 3,
+          avgReviewTime: 2.0,
         },
       ],
     };

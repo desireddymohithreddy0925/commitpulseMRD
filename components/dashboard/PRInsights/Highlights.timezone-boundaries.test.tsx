@@ -56,7 +56,7 @@ const mockHighlights: PRInsightData['highlights'] = {
   },
 };
 
-describe('Highlights — timezone boundaries', () => {
+describe('Highlights - timezone boundaries', () => {
   beforeEach(() => {
     // Simulate UTC timezone environment
     vi.stubGlobal('Intl', {
@@ -85,9 +85,9 @@ describe('Highlights — timezone boundaries', () => {
 
   it('displays N/A and no-highlights message when all highlight data is null across timezones', () => {
     const emptyHighlights: PRInsightData['highlights'] = {
-      fastestMerged: null,
-      mostDiscussed: null,
-      largest: null,
+      fastestMerged: undefined,
+      mostDiscussed: undefined,
+      largest: undefined,
     };
 
     render(<Highlights highlights={emptyHighlights} />);
@@ -125,7 +125,7 @@ describe('Highlights — timezone boundaries', () => {
     expect(links[1]).toHaveAttribute('href', 'https://github.com/test/pr/2');
     expect(links[2]).toHaveAttribute('href', 'https://github.com/test/pr/3');
 
-    // All links open in new tab — safe across all timezone/locale environments
+    // All links open in new tab - safe across all timezone/locale environments
     links.forEach((link) => {
       expect(link).toHaveAttribute('target', '_blank');
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
