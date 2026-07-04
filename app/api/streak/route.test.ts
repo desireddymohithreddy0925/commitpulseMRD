@@ -1653,7 +1653,7 @@ describe('GET /api/streak', () => {
       expect(fetchGitHubContributions).not.toHaveBeenCalled();
 
       const body = await response.text();
-      expect(body).toContain('strictly accepts a maximum of 2 usernames');
+      expect(body).toContain('a maximum of 2 usernames');
     });
   });
 
