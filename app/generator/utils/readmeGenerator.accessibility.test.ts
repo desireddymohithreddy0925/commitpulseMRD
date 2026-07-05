@@ -14,6 +14,8 @@ const defaultState: GeneratorState = {
   githubUsername: 'johndoe',
   showCommitPulse: true,
   commitPulseAccent: '#ff0055',
+  showRepoSpotlight: false,
+  spotlightRepo: '',
   showSnakeGraph: true,
   showPacmanGraph: true,
   graphPlacement: 'middle',

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET, getValidationCacheForTests } from './route';
+import { GET } from './route';
+import { getValidationCacheForTests } from './validation-cache';
 
 // We only mock the two things that reach outside this process:
 // the GitHub API call and the wall-clock time helper.
