@@ -19,7 +19,14 @@ function GithubMark() {
   );
 }
 
-const NAV_LINKS = [
+export interface NavLink {
+  label: string;
+  href: string;
+  isExternal: boolean;
+  isPrimary: boolean;
+}
+
+const NAV_LINKS: NavLink[] = [
   {
     label: 'Generator',
     href: '/generator',
