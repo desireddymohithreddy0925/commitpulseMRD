@@ -38,7 +38,12 @@ import { generateCommitClockSVG } from '@/lib/svg/commitClock';
 import { generateWeekdaySVG } from '@/lib/svg/weekday';
 import { optimizeSVG } from '@/lib/svg/optimizer';
 import { getSecondsUntilUTCMidnight, getSecondsUntilMidnightInTimezone } from '@/utils/time';
-import type { BadgeParams, RepoContribution, ExtendedContributionData } from '@/types';
+import type {
+  BadgeParams,
+  RepoContribution,
+  ExtendedContributionData,
+  ContributionCalendar,
+} from '@/types';
 import { getNormalizedThemeKey, themes } from '@/lib/svg/themes';
 import { streakParamsSchema, coerceQueryParams } from '@/lib/validations';
 import { sanitizeHexColor, sanitizeRadius, escapeXML } from '@/lib/svg/sanitizer';
@@ -404,6 +409,7 @@ export async function GET(request: Request) {
     };
 
     let calendar;
+    let individualCalendars: { user: string; calendar: ContributionCalendar }[] | undefined;
     let versusCalendar;
     let repoContributions: RepoContribution[] = [];
 
@@ -420,6 +426,7 @@ export async function GET(request: Request) {
           signal: controller.signal,
         });
         calendar = orgData.calendar;
+        individualCalendars = orgData.individualCalendars;
         repoContributions = normalizedView === 'languages' ? orgData.repoContributions || [] : [];
       } else if (user.includes(',')) {
         const users = user
@@ -427,7 +434,16 @@ export async function GET(request: Request) {
           .map((u) => u.trim())
           .filter(Boolean);
 
-        if (users.length > 2) {
+        if (users.length > 7) {
+          throw new Error(
+            'ValidationError: A maximum of 7 usernames is supported for the skyline.'
+          );
+        }
+
+        if (
+          users.length > 2 &&
+          (versus || (normalizedView !== 'skyline' && normalizedView !== 'default'))
+        ) {
           throw new Error(
             'ValidationError: The streak comparison generator strictly accepts a maximum of 2 usernames.'
           );
@@ -460,6 +476,10 @@ export async function GET(request: Request) {
           throw lastError || new Error('No successful data fetched');
         }
         calendar = aggregateCalendars(successfulData.map((d) => d.calendar));
+        individualCalendars = successfulData.map((d, i) => ({
+          user: users[i],
+          calendar: d.calendar,
+        }));
         repoContributions =
           normalizedView === 'languages'
             ? successfulData.flatMap((d) => d.repoContributions || [])
@@ -628,7 +648,7 @@ export async function GET(request: Request) {
       svg = generateVersusSVG(stats1, stats2, params, normalizedCalendar, normalizedVersusCalendar);
     } else {
       const stats = calculateStreak(calendar, timezone, undefined, grace);
-      svg = generateSVG(stats, params, calendar);
+      svg = generateSVG(stats, params, calendar, individualCalendars);
     }
 
     if (minify) {
@@ -715,6 +735,9 @@ function sanitizeErrorMessage(message: string): string {
   }
   if (lower.includes('strictly accepts a maximum of 2')) {
     return 'The streak comparison generator strictly accepts a maximum of 2 usernames.';
+  }
+  if (lower.includes('maximum of 7 usernames')) {
+    return 'A maximum of 7 usernames is supported for the skyline.';
   }
   if (lower.includes('quota is low')) {
     return 'API rate limit quota is low. Please try again later.';
