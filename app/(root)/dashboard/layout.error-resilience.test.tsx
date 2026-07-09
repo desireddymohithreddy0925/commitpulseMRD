@@ -7,8 +7,8 @@ vi.mock('sonner', () => ({
   Toaster: () => <div data-testid="toaster" />,
 }));
 
-class TestErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
-  constructor(props: {children: ReactNode}) {
+class TestErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -43,7 +43,7 @@ describe('DashboardLayout - Error Resilience', () => {
     );
 
     expect(screen.getByText('Test Fallback UI')).toBeInTheDocument();
-    
+
     consoleErrorSpy.mockRestore();
   });
 
