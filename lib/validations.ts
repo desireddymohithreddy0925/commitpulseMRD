@@ -1028,7 +1028,64 @@ export const reviewPostSchema = z.object({
 
 export type ReviewPostParams = z.infer<typeof reviewPostSchema>;
 
+export const animatedStreakParamsSchema = baseStreakParamsSchema
+  .extend({
+    format: z.enum(['gif', 'webp'], {
+      message: 'format must be "gif" or "webp"',
+    }),
+    fps: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (val === undefined || val === '') return true;
+          const num = Number(val);
+          return !isNaN(num) && Number.isInteger(num) && num >= 1 && num <= 30;
+        },
+        { message: 'fps must be an integer between 1 and 30' }
+      )
+      .transform((val) => (val === undefined || val === '' ? 15 : Math.round(Number(val)))),
+
+    duration: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (val === undefined || val === '') return true;
+          const num = Number(val);
+          return !isNaN(num) && num >= 0.1 && num <= 10.0;
+        },
+        { message: 'duration must be a number between 0.1 and 10 seconds' }
+      )
+      .transform((val) => (val === undefined || val === '' ? 2.0 : Number(val))),
+
+    loop: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (val === undefined || val === '') return true;
+          const num = Number(val);
+          return !isNaN(num) && Number.isInteger(num) && num >= -1 && num <= 100;
+        },
+        { message: 'loop must be an integer between -1 and 100' }
+      )
+      .transform((val) => (val === undefined || val === '' ? 0 : Math.round(Number(val)))),
+
+    entrance: z
+      .enum(['rise', 'fade', 'slide', 'wave', 'bounce', 'none'], {
+        message: 'invalid entrance animation',
+      })
+      .optional()
+      .transform((val) => val || 'rise'),
+  })
+  .refine((data) => !data.from || !data.to || Date.parse(data.from) <= Date.parse(data.to), {
+    message: '"to" date must be after or equal to "from" date',
+    path: ['to'],
+  });
+
 export type StreakParams = z.infer<typeof streakParamsSchema>;
+export type AnimatedStreakParams = z.infer<typeof animatedStreakParamsSchema>;
 export type GithubParams = z.infer<typeof githubParamsSchema>;
 export type CompareParams = z.infer<typeof compareParamsSchema>;
 export type OgParams = z.infer<typeof ogParamsSchema>;
