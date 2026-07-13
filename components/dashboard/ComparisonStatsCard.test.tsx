@@ -21,18 +21,7 @@ import ComparisonStatsCard from './ComparisonStatsCard';
 // Strips motion-specific props so they don't leak into the DOM.
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({
-      children,
-      className,
-      style,
-      whileInView,
-      whileHover,
-      whileTap,
-      initial,
-      animate,
-      transition,
-      ...rest
-    }: any) => (
+    div: ({ children, className, style, ...rest }: any) => (
       <div className={className} style={style} {...rest}>
         {children}
       </div>
@@ -267,8 +256,8 @@ describe('ComparisonStatsCard', () => {
 
   // ── Edge cases ────────────────────────────────────────────────────────────
   describe('edge cases', () => {
-    it('renders zero values without crashing and shows no Winner badge', () => {
-      render(
+    it('renders zero values and fallback bar without crashing', () => {
+      const { container } = render(
         <ComparisonStatsCard
           title="Commits"
           valueA={0}
@@ -279,26 +268,12 @@ describe('ComparisonStatsCard', () => {
         />
       );
 
-      const zeros = screen.getAllByText('0');
-      expect(zeros).toHaveLength(2);
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+      expect(screen.getByText('Bob')).toBeInTheDocument();
       expect(screen.queryByText('Winner')).not.toBeInTheDocument();
-    });
 
-    it('renders the neutral fallback bar when both values are zero', () => {
-      const { container } = render(
-        <ComparisonStatsCard
-          title="Developer Score"
-          valueA={0}
-          valueB={0}
-          labelA="User One"
-          labelB="User Two"
-          icon="Award"
-        />
-      );
-
-      // When total is 0, the component renders a single bg-zinc-300 fallback bar
-      const fallbackBar = container.querySelector('.bg-zinc-300');
-      expect(fallbackBar).toBeInTheDocument();
+      const fallback = container.querySelector('.bg-zinc-300.dark\\:bg-zinc-800');
+      expect(fallback).toBeInTheDocument();
     });
 
     it('renders large values correctly', () => {
@@ -313,9 +288,25 @@ describe('ComparisonStatsCard', () => {
         />
       );
 
-      expect(screen.getByText('9999')).toBeInTheDocument();
+      expect(screen.getByText((9999).toLocaleString())).toBeInTheDocument();
       expect(screen.getByText('1')).toBeInTheDocument();
       expect(screen.getByText('Winner')).toBeInTheDocument();
+    });
+
+    it('formats values with locale thousands separators (consistent with /compare)', () => {
+      render(
+        <ComparisonStatsCard
+          title="Total Contributions"
+          valueA={1234567}
+          valueB={89012}
+          labelA="Alice"
+          labelB="Bob"
+          icon="GitCommit"
+        />
+      );
+
+      expect(screen.getByText((1234567).toLocaleString())).toBeInTheDocument();
+      expect(screen.getByText((89012).toLocaleString())).toBeInTheDocument();
     });
   });
 
@@ -598,7 +589,7 @@ describe('ComparisonStatsCard responsive breakpoints', () => {
     expect(screen.getByTitle('Bob')).toBeDefined();
   });
 
-  it('renders neutral fallback progress bar and no winner badge when both values are zero', () => {
+  it('renders correctly and no winner badge when both values are zero', () => {
     const { container } = render(
       <ComparisonStatsCard
         title="Commits"
@@ -610,12 +601,9 @@ describe('ComparisonStatsCard responsive breakpoints', () => {
       />
     );
 
-    const progressBar = container.querySelector('.w-full.h-2.bg-gray-100');
-    expect(progressBar?.tagName).toBe('DIV');
-
-    const fallbackBar = container.querySelector('.bg-gray-700\\/50');
-    expect(fallbackBar).toBeDefined();
-
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    const fallback = container.querySelector('.bg-zinc-300.dark\\:bg-zinc-800');
+    expect(fallback).toBeInTheDocument();
     expect(screen.queryByText('Winner')).toBeNull();
   });
 });

@@ -13,10 +13,12 @@ import QRCode from 'react-qr-code';
 import { Check, Code, Copy, Download, ExternalLink, Loader2, Sparkles, X } from 'lucide-react';
 import type { DashboardExportData } from '@/types/dashboard';
 import { useShareActions } from '@/hooks/useShareActions';
+import { useTranslation } from '@/context/TranslationContext';
+import NextImage from 'next/image';
 
 type OptionState = 'idle' | 'loading' | 'success' | 'error';
 
-interface ShareSheetProps {
+export interface ShareSheetProps {
   username: string;
   isOpen: boolean;
   onClose: () => void;
@@ -29,7 +31,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
       <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500">
         {children}
       </span>
-      <div className="flex-1 h-px bg-gradient-to-r from-zinc-200 to-transparent dark:from-zinc-800" />
+      <div className="flex-1 h-px bg-linear-to-r from-zinc-200 to-transparent dark:from-zinc-800" />
     </div>
   );
 }
@@ -54,13 +56,9 @@ const RedditIcon = ({ size = 20 }: { size?: number }) => (
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    {/* Orange circle */}
     <circle cx="10" cy="10" r="10" fill="#FF4500" />
-    {/* White Snoo body */}
     <ellipse cx="10" cy="13.2" rx="4.8" ry="3.2" fill="white" />
-    {/* White Snoo head */}
     <circle cx="10" cy="8.5" r="3.4" fill="white" />
-    {/* Antenna stick */}
     <line
       x1="11.8"
       y1="6.0"
@@ -70,17 +68,11 @@ const RedditIcon = ({ size = 20 }: { size?: number }) => (
       strokeWidth="1.1"
       strokeLinecap="round"
     />
-    {/* Antenna ball */}
     <circle cx="13.9" cy="4.1" r="1.1" fill="white" />
-    {/* Left eye white */}
     <circle cx="8.6" cy="8.3" r="1.05" fill="#FF4500" />
-    {/* Left eye pupil */}
     <circle cx="8.6" cy="8.3" r="0.55" fill="red" />
-    {/* Right eye white */}
     <circle cx="11.4" cy="8.3" r="1.05" fill="#FF4500" />
-    {/* Right eye pupil */}
     <circle cx="11.4" cy="8.3" r="0.55" fill="red" />
-    {/* Smile */}
     <path
       d="M8.2 10.1 Q10 11.4 11.8 10.1"
       stroke="#FF4500"
@@ -88,10 +80,8 @@ const RedditIcon = ({ size = 20 }: { size?: number }) => (
       fill="none"
       strokeLinecap="round"
     />
-    {/* Left ear */}
     <circle cx="6.8" cy="13.1" r="1.1" fill="white" />
     <circle cx="6.8" cy="13.1" r="0.55" fill="#FF4500" />
-    {/* Right ear */}
     <circle cx="13.2" cy="13.1" r="1.1" fill="white" />
     <circle cx="13.2" cy="13.1" r="0.55" fill="#FF4500" />
   </svg>
@@ -115,6 +105,12 @@ const SystemShareIcon = ({ size = 12 }: { size?: number }) => (
   </svg>
 );
 
+const WhatsAppIcon = ({ size = 15 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+    <path d="M19.11 17.21c-.29-.14-1.7-.84-1.96-.94-.26-.1-.45-.14-.64.14-.19.29-.74.94-.91 1.13-.17.19-.33.22-.62.07-.29-.14-1.2-.44-2.28-1.4-.84-.75-1.41-1.68-1.58-1.97-.17-.29-.02-.44.13-.58.13-.13.29-.33.43-.5.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.07-.14-.64-1.55-.88-2.12-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.29-1 1-.96 2.44.05 1.44 1.04 2.84 1.19 3.03.14.19 2.05 3.13 4.96 4.39.69.3 1.23.48 1.65.62.69.22 1.31.19 1.81.12.55-.08 1.7-.69 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.19-.55-.33z" />
+  </svg>
+);
+
 function GitHubAvatar({ username }: { username: string }) {
   const [src, setSrc] = useState<string | null>(null);
 
@@ -130,15 +126,15 @@ function GitHubAvatar({ username }: { username: string }) {
       <img
         src={src}
         alt={username}
-        width={36}
-        height={36}
+        width="36"
+        height="36"
         className="w-9 h-9 rounded-full ring-2 ring-zinc-200 dark:ring-zinc-700 object-cover shrink-0"
       />
     );
   }
 
   return (
-    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-400 dark:from-zinc-600 dark:to-zinc-700 ring-2 ring-zinc-200 dark:ring-zinc-700 flex items-center justify-center shrink-0">
+    <div className="w-9 h-9 rounded-full bg-linear-to-br from-zinc-300 to-zinc-400 dark:from-zinc-600 dark:to-zinc-700 ring-2 ring-zinc-200 dark:ring-zinc-700 flex items-center justify-center shrink-0">
       <span className="text-[13px] font-bold text-white uppercase leading-none">
         {username.charAt(0)}
       </span>
@@ -147,6 +143,7 @@ function GitHubAvatar({ username }: { username: string }) {
 }
 
 export default function ShareSheet({ username, isOpen, onClose, exportData }: ShareSheetProps) {
+  const { t } = useTranslation();
   const overlayRef = useRef<HTMLDivElement>(null);
   const qrWrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +155,12 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
 
   const profileUrl = `https://commitpulse.vercel.app/dashboard/${username}`;
 
+  const handleWhatsApp = () => {
+    const text = encodeURIComponent(profileUrl);
+
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
+
   const {
     states,
     handleTwitter,
@@ -168,6 +171,7 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
     handleDownloadSVG,
     handleCopyMarkdown,
     handleDownloadJSON,
+    handleDownloadSTL,
     handleNativeShare,
   } = useShareActions(username, exportData, onClose);
 
@@ -258,7 +262,7 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
       }
 
       setLinkCopied(true);
-      showToast('✓ Link copied');
+      showToast(`✓ ${t('dashboard.share.link_copied')}`);
       setTimeout(() => setLinkCopied(false), 2200);
     } catch {
       showToast('Unable to copy link');
@@ -319,7 +323,7 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
   const handleLocalCopyMarkdown = () => {
     handleCopyMarkdown();
     setMdCopied(true);
-    showToast('✓ Markdown copied');
+    showToast(`✓ ${t('dashboard.share.link_copied')}`); // fall back or show toast
     setTimeout(() => setMdCopied(false), 2200);
   };
 
@@ -387,8 +391,9 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                 </div>
               </div>
               <button
+                type="button"
                 onClick={onClose}
-                aria-label="Close share panel"
+                aria-label={t('dashboard.share.close_aria')}
                 className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
               >
                 <X size={14} />
@@ -412,12 +417,14 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                   />
                   <div className="absolute inset-0 bg-zinc-950/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1.5 p-2">
                     <button
+                      type="button"
                       onClick={handleCopyQRAsImage}
                       className="w-28 py-1 rounded bg-purple-600 text-white font-mono text-[9px] font-bold"
                     >
                       {qrCopied ? 'Copied!' : 'Copy Image'}
                     </button>
                     <button
+                      type="button"
                       onClick={handleDownloadQR}
                       className="w-28 py-1 rounded bg-zinc-800 text-zinc-200 font-mono text-[9px] font-bold"
                     >
@@ -432,21 +439,25 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                       <input
                         ref={inputRef}
                         readOnly
+                        aria-label="Your CommitPulse profile URL"
                         value={profileUrl}
                         className="w-full bg-transparent text-xs font-mono text-zinc-500 dark:text-zinc-300 outline-none select-all"
                       />
                     </div>
                     <button
+                      type="button"
                       onClick={handleLocalCopyLink}
                       className="p-2 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-lg shadow-sm"
                     >
                       {linkCopied ? <Check size={14} /> : <Copy size={14} />}
                     </button>
                     <button
+                      type="button"
+                      aria-label="Open profile in new tab"
                       onClick={() => window.open(profileUrl, '_blank')}
                       className="p-2 bg-white border border-zinc-200 text-zinc-600 rounded-lg dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
                     >
-                      <ExternalLink size={14} />
+                      <ExternalLink size={14} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -454,40 +465,50 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
 
               {/* Social Channels */}
               <div>
-                <SectionLabel>Social Channels</SectionLabel>
+                <SectionLabel>{t('dashboard.share.social_channels')}</SectionLabel>
                 <div className="grid grid-cols-2 gap-2">
                   <button
+                    type="button"
                     onClick={handleTwitter}
                     className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-left font-medium text-xs flex items-center gap-2 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                   >
-                    <XIcon size={15} /> Share on X
+                    <XIcon size={15} /> {t('dashboard.share.share_x')}
                   </button>
                   <button
+                    type="button"
                     onClick={handleLinkedIn}
                     className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-left font-medium text-xs flex items-center gap-2 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                   >
-                    <LinkedInIcon size={15} /> LinkedIn
+                    <LinkedInIcon size={15} /> {t('dashboard.share.share_linkedin')}
                   </button>
                   <button
+                    type="button"
                     onClick={handleReddit}
                     className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-left font-medium text-xs flex items-center gap-2 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                   >
-                    <RedditIcon size={15} /> Reddit
+                    <RedditIcon size={15} /> {t('dashboard.share.share_reddit')}
+                  </button>
+                  <button
+                    onClick={handleWhatsApp}
+                    className="p-2 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-xl text-left font-medium text-xs flex items-center gap-2 hover:opacity-90 transition-opacity"
+                  >
+                    <WhatsAppIcon size={15} /> WhatsApp
                   </button>
                   <button
                     onClick={handleNativeShare}
                     className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-left font-medium text-xs flex items-center gap-2 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                   >
-                    <SystemShareIcon size={15} /> System Share
+                    <SystemShareIcon size={15} /> {t('dashboard.share.share_os')}
                   </button>
                 </div>
               </div>
 
               {/* Export Assets Blocks Area */}
               <div>
-                <SectionLabel>Export Options</SectionLabel>
+                <SectionLabel>{t('dashboard.share.export_options')}</SectionLabel>
                 <div className="space-y-1.5">
                   <button
+                    type="button"
                     onClick={() => {
                       window.open(`/dashboard/${username}/wrapped`, '_blank');
                       onClose();
@@ -498,11 +519,12 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                       <Sparkles size={12} />
                     </div>
                     <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                      GitHub Wrapped
+                      {t('dashboard.share.github_wrapped')}
                     </p>
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleLocalCopyMarkdown}
                     className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left flex items-center gap-3 border border-transparent hover:border-zinc-200"
                   >
@@ -510,28 +532,35 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                       <Code size={12} />
                     </div>
                     <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                      {mdCopied ? 'Copied Snippet!' : 'Copy README Markdown'}
+                      {mdCopied ? 'Copied Snippet!' : t('dashboard.share.copy_markdown')}
                     </p>
                   </button>
 
                   {[
-                    { key: 'png', label: 'Download PNG Snapshot', action: handleDownloadPNG },
-                    { key: 'webp', label: 'Download Optimized WebP', action: handleDownloadWEBP },
+                    {
+                      key: 'png',
+                      label: t('dashboard.share.download_png'),
+                      action: handleDownloadPNG,
+                    },
+                    {
+                      key: 'webp',
+                      label: t('dashboard.share.download_webp'),
+                      action: handleDownloadWEBP,
+                    },
                     {
                       key: 'svg',
-                      label: 'Download Vector SVG Monolith',
+                      label: t('dashboard.share.download_svg'),
                       action: handleDownloadSVG,
                     },
                     {
                       key: 'json',
-                      label: 'Export Structured JSON Data',
+                      label: t('dashboard.share.download_json'),
                       action: handleDownloadJSON,
                     },
                     {
                       key: 'stl',
-                      label: 'Download Printable 3D STL (Coming Soon)',
-                      action: () => {},
-                      disabled: true,
+                      label: t('dashboard.share.download_stl'),
+                      action: handleDownloadSTL,
                     },
                   ].map((row) => {
                     const rowState = combinedStates[row.key] ?? 'idle';
@@ -539,6 +568,7 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                       'disabled' in row && row.disabled ? true : rowState === 'loading';
                     return (
                       <button
+                        type="button"
                         key={row.key}
                         onClick={row.action}
                         disabled={isDisabled}
@@ -553,7 +583,7 @@ export default function ShareSheet({ username, isOpen, onClose, exportData }: Sh
                             )}
                           </div>
                           <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                            {rowState === 'success' ? 'Saved Asset!' : row.label}
+                            {rowState === 'success' ? t('dashboard.share.downloaded') : row.label}
                           </p>
                         </div>
                       </button>

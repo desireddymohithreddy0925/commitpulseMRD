@@ -1,12 +1,15 @@
 'use client';
-import Image from 'next/image';
 import { trackUser } from '@/utils/tracking';
+import { useTranslation } from '@/context/TranslationContext';
+import { renderHeroTitle } from './heroTitle';
 
 import Link from 'next/link';
 import { useRef, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { jsPDF } from 'jspdf';
+// import 'svg2pdf.js';
 
 import {
   Flame,
@@ -21,7 +24,6 @@ import {
 } from 'lucide-react';
 
 import { X } from 'lucide-react';
-import useLocalStorage from '@/hooks/useLocalStorage';
 
 import { CommitPulseLogo } from '@/components/commitpulse-logo';
 import { CustomizeCTA } from './CustomizeCTA';
@@ -97,12 +99,8 @@ function CountUp({ value, duration = 1000 }: { value: number; duration?: number 
     const start = 0;
     const end = value;
     if (start === end) {
-      // Safe: early-exit guard when the value hasn't changed — avoids scheduling
-      // a setInterval just to immediately clear it. No stale-dependency risk
-      // because `value` is the only dep and this path reads it synchronously.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCount(end);
-      return;
+      const frame = requestAnimationFrame(() => setCount(end));
+      return () => cancelAnimationFrame(frame);
     }
 
     const totalMilliseconds = duration;
@@ -128,6 +126,7 @@ function CountUp({ value, duration = 1000 }: { value: number; duration?: number 
 }
 
 function SampleBadgePreview() {
+  const { t } = useTranslation();
   const cols = 14;
   const rows = 7;
   const towers: { col: number; row: number; height: number; isActive: boolean }[] = [];
@@ -193,7 +192,7 @@ function SampleBadgePreview() {
             opacity: 0.6,
           }}
         >
-          PREVIEW MONOLITH
+          {t('landing.preview_monolith', { defaultValue: 'PREVIEW MONOLITH' })}
         </text>
 
         <line
@@ -267,12 +266,13 @@ function SampleBadgePreview() {
 
       <div className="text-center max-w-md relative z-10 px-4">
         <h4 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-2">
-          Interactive Monolith Preview
+          {t('landing.interactive_preview_title', { defaultValue: 'Interactive Monolith Preview' })}
         </h4>
         <p className="text-xs text-zinc-400 leading-relaxed">
-          CommitPulse compiles your public GitHub contribution history into a customizable 3D city.
-          The taller the towers, the more you committed that day. Enter a GitHub username above to
-          instantly generate your streak badge.
+          {t('landing.interactive_preview_desc', {
+            defaultValue:
+              'CommitPulse compiles your public GitHub contribution history into a customizable 3D city. The taller the towers, the more you committed that day. Enter a GitHub username above to instantly generate your streak badge.',
+          })}
         </p>
       </div>
     </div>
@@ -293,6 +293,7 @@ interface UserDetails {
 }
 
 export default function LandingPageClient() {
+  const { t } = useTranslation();
   const getDisplayUsername = (name: string) => {
     if (name.includes('github.com/')) {
       const parts = name.split('github.com/');
@@ -305,7 +306,7 @@ export default function LandingPageClient() {
     return name;
   };
 
-  const [username, setUsername] = useLocalStorage('commitpulse:last-user', '');
+  const [username, setUsername] = useState('');
   const [instantUsername, setInstantUsername] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -363,6 +364,12 @@ export default function LandingPageClient() {
   const previewUsername = instantUsername || debouncedUsername;
   const hasUsername = previewUsername.length > 0;
 
+  // Keep track of the latest previewUsername to avoid race conditions with out-of-order image callbacks
+  const latestPreviewUsernameRef = useRef(previewUsername);
+  useEffect(() => {
+    latestPreviewUsernameRef.current = previewUsername;
+  }, [previewUsername]);
+
   const badgeUrl = `/api/streak?user=${encodeURIComponent(previewUsername)}`;
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://commitpulse.vercel.app').replace(
     /\/$/,
@@ -376,6 +383,55 @@ export default function LandingPageClient() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const DownloadPDF = async () => {
+    try {
+      const response = await fetch(badgeUrl);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch SVG');
+      }
+
+      const svgText = await response.text();
+
+      const container = document.createElement('div');
+      container.innerHTML = svgText;
+
+      const svgElement = container.querySelector('svg');
+
+      if (!svgElement) {
+        throw new Error('SVG element not found');
+      }
+
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      await (
+        pdf as jsPDF & {
+          svg: (
+            element: SVGElement,
+            options: { x: number; y: number; width: number; height: number }
+          ) => Promise<void>;
+        }
+      ).svg(svgElement, {
+        x: 10,
+        y: 10,
+        width: pageWidth - 20,
+        height: pageHeight - 20,
+      });
+
+      pdf.save(`${previewUsername}-commitpulse.pdf`);
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('Failed to generate PDF');
+    }
   };
 
   const badgeLoaded = badgeResult?.username === previewUsername && badgeResult?.status === 'loaded';
@@ -402,12 +458,16 @@ export default function LandingPageClient() {
       return;
     }
 
+    // Create AbortController to manage fetch lifecycle
+    const abortController = new AbortController();
+
     const fetchDetails = async () => {
       setUserDetailsLoading(true);
       setUserDetailsError(null);
       try {
         const response = await fetch(
-          `/api/user-details?username=${encodeURIComponent(debouncedUsername)}`
+          `/api/user-details?username=${encodeURIComponent(debouncedUsername)}`,
+          { signal: abortController.signal }
         );
         if (!response.ok) {
           if (response.status === 404) {
@@ -417,21 +477,66 @@ export default function LandingPageClient() {
           throw new Error(errData.error || 'Failed to fetch user');
         }
         const data = await response.json();
-        setUserDetails(data);
+        // Only update state if the request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setUserDetails(data);
+        }
       } catch (err) {
+        // Don't update state if the request was aborted (component unmount or new request)
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
         const message = err instanceof Error ? err.message : 'Failed to fetch user';
-        setUserDetails(null);
-        setUserDetailsError(message);
+        if (!abortController.signal.aborted) {
+          setUserDetails(null);
+          setUserDetailsError(message);
+        }
       } finally {
-        setUserDetailsLoading(false);
+        // Always clear loading state if not aborted
+        if (!abortController.signal.aborted) {
+          setUserDetailsLoading(false);
+        }
       }
     };
 
     fetchDetails();
+
+    // Cleanup: abort fetch when component unmounts or dependencies change
+    return () => {
+      abortController.abort();
+    };
   }, [debouncedUsername, mounted]);
 
   const copyToClipboard = async () => {
-    if (trimmedUsername.length === 0) return;
+    if (trimmedUsername.length === 0) {
+      const inputField = document.querySelector('input[type="text"]') as HTMLInputElement;
+      if (inputField) {
+        inputField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        inputField.focus();
+        gsap.fromTo(
+          inputField,
+          { x: -6, boxShadow: '0 0 0px rgba(239, 68, 68, 0)', borderColor: 'inherit' },
+          {
+            x: 6,
+            borderColor: 'rgba(239, 68, 68, 0.8)',
+            boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
+            duration: 0.08,
+            yoyo: true,
+            repeat: 5,
+            ease: 'power1.inOut',
+            onComplete: () => {
+              gsap.to(inputField, {
+                x: 0,
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                boxShadow: 'none',
+                duration: 0.4,
+              });
+            },
+          }
+        );
+      }
+      return;
+    }
 
     try {
       await navigator.clipboard.writeText(markdown);
@@ -460,12 +565,14 @@ export default function LandingPageClient() {
   const selectDemoUser = (name: string) => {
     setUsername(name);
     setInstantUsername(name);
+    setBadgeResult(null);
   };
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (trimmedUsername.length > 0) {
       setInstantUsername(trimmedUsername);
+      setBadgeResult(null);
       trackUser(trimmedUsername);
       addSearch(trimmedUsername);
     }
@@ -474,36 +581,36 @@ export default function LandingPageClient() {
   // 4 Premium statistics cards schema
   const statsData = [
     {
-      label: 'Current Streak',
+      label: t('dashboard.stats.current_streak', { defaultValue: 'Current Streak' }),
       value: userDetails?.stats?.currentStreak ?? (previewUsername ? 0 : 12),
       icon: Flame,
       color: 'from-orange-500/20 to-red-500/20 text-orange-400 border-orange-500/20',
       glow: 'shadow-orange-500/10',
-      unit: 'days',
+      unit: t('dashboard.stats.days', { defaultValue: 'Days' }).toLowerCase(),
     },
     {
-      label: 'Longest Streak',
+      label: t('dashboard.stats.peak_streak', { defaultValue: 'Longest Streak' }),
       value: userDetails?.stats?.longestStreak ?? (previewUsername ? 0 : 34),
       icon: Trophy,
       color: 'from-amber-500/20 to-yellow-500/20 text-amber-400 border-yellow-500/20',
       glow: 'shadow-yellow-500/10',
-      unit: 'days',
+      unit: t('dashboard.stats.days', { defaultValue: 'Days' }).toLowerCase(),
     },
     {
-      label: 'Contributions',
+      label: t('dashboard.stats.contributions', { defaultValue: 'Contributions' }),
       value: userDetails?.stats?.totalContributions ?? (previewUsername ? 0 : 420),
       icon: GitCommit,
       color: 'from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/20',
       glow: 'shadow-emerald-500/10',
-      unit: 'commits',
+      unit: t('dashboard.activity.commits', { defaultValue: 'commits' }).toLowerCase(),
     },
     {
-      label: 'Repositories',
+      label: t('dashboard.profile.repos', { defaultValue: 'Repositories' }),
       value: userDetails?.public_repos ?? (previewUsername ? 0 : 24),
       icon: Folder,
       color: 'from-cyan-500/20 to-blue-500/20 text-cyan-400 border-cyan-500/20',
       glow: 'shadow-cyan-500/10',
-      unit: 'repos',
+      unit: t('dashboard.profile.repos_unit', { defaultValue: 'repos' }).toLowerCase(),
     },
   ];
 
@@ -520,11 +627,9 @@ export default function LandingPageClient() {
 
           <div ref={heroRef}>
             <h1 className="hero-text opacity-0 translate-y-10 mb-8 bg-gradient-to-br from-gray-900 via-black to-gray-600 dark:from-white dark:via-gray-100 dark:to-gray-500 bg-clip-text text-transparent text-5xl font-black tracking-tighter md:text-8xl pb-2">
-              Elevate Your <br />{' '}
-              <span className="contribution-text inline-block bg-[length:300%_300%] bg-gradient-to-r from-emerald-400 via-cyan-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
-                Contribution
-              </span>{' '}
-              Story.
+              {renderHeroTitle(
+                t('landing.title', { defaultValue: 'Elevate Your\n{Contribution} Story.' })
+              )}
             </h1>
           </div>
 
@@ -550,8 +655,12 @@ export default function LandingPageClient() {
                   <input
                     suppressHydrationWarning
                     type="text"
-                    placeholder="Enter GitHub Username"
-                    aria-label="Enter GitHub username to generate badge"
+                    placeholder={t('landing.input_placeholder', {
+                      defaultValue: 'Enter GitHub Username',
+                    })}
+                    aria-label={t('landing.input_aria_label', {
+                      defaultValue: 'Enter GitHub username to generate badge',
+                    })}
                     className="flex-1 rounded-2xl border border-black/10 bg-white pl-12 pr-10 py-4 text-sm text-black outline-none transition-all duration-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent dark:border-white/10 dark:bg-black/60 dark:text-white dark:placeholder:text-gray-500 shadow-inner"
                     value={username}
                     onChange={(e) => {
@@ -568,17 +677,18 @@ export default function LandingPageClient() {
                       }
                       setUsername(val);
                       setInstantUsername('');
+                      setBadgeResult(null);
                     }}
                     maxLength={39}
                   />
-                  {username.length > 0 ? (
+                  {mounted && username.length > 0 ? (
                     <button
                       onClick={() => {
                         setUsername('');
                         setInstantUsername('');
                       }}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-black dark:text-white/65 dark:hover:text-white"
-                      aria-label="Clear input"
+                      aria-label={t('landing.clear_input', { defaultValue: 'Clear input' })}
                       type="button"
                     >
                       <X size={18} />
@@ -591,7 +701,7 @@ export default function LandingPageClient() {
                   suppressHydrationWarning
                   type="submit"
                   disabled={!mounted || trimmedUsername.length === 0}
-                  aria-label="Generate CommitPulse badge"
+                  aria-label={t('landing.generate_badge', { defaultValue: 'Generate Badge' })}
                   className={`relative flex min-w-[180px] items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 py-4 text-sm font-bold transition-all duration-300 transform cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed ${
                     mounted && trimmedUsername.length > 0
                       ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.25)] hover:opacity-95'
@@ -599,7 +709,7 @@ export default function LandingPageClient() {
                   }`}
                 >
                   <Sparkles size={16} />
-                  Generate Badge
+                  {t('landing.generate_badge', { defaultValue: 'Generate Badge' })}
                 </button>
               </div>
 
@@ -616,7 +726,9 @@ export default function LandingPageClient() {
                         className="text-zinc-500 text-xs pl-1 flex items-center gap-1.5"
                       >
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-600 animate-pulse" />
-                        Enter a GitHub username above to copy your badge link.
+                        {t('landing.empty_username_warning', {
+                          defaultValue: 'Enter a GitHub username above to copy your badge link.',
+                        })}
                       </motion.p>
                     ) : !validateGitHubUsername(username.trim()) ? (
                       <motion.p
@@ -627,8 +739,10 @@ export default function LandingPageClient() {
                         className="text-amber-500 text-xs pl-1 flex items-center gap-1.5"
                       >
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        Invalid username format. Usernames can only contain alphanumeric characters
-                        and hyphens, and cannot start/end with a hyphen.
+                        {t('landing.invalid_username_format', {
+                          defaultValue:
+                            'Invalid username format. Usernames can only contain alphanumeric characters and hyphens, and cannot start/end with a hyphen.',
+                        })}
                       </motion.p>
                     ) : userDetailsLoading ? (
                       <motion.div
@@ -640,7 +754,9 @@ export default function LandingPageClient() {
                       >
                         <div className="w-6 h-6 rounded-full bg-white/10" />
                         <div className="h-3 w-24 bg-white/10 rounded" />
-                        <span className="text-[10px] text-zinc-500 ml-auto">Verifying...</span>
+                        <span className="text-[10px] text-zinc-500 ml-auto">
+                          {t('landing.verifying', { defaultValue: 'Verifying...' })}
+                        </span>
                       </motion.div>
                     ) : userDetailsError ? (
                       <motion.p
@@ -652,8 +768,11 @@ export default function LandingPageClient() {
                       >
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
                         {userDetailsError === 'User not found'
-                          ? 'User not found. Check the spelling or confirm if this account exists on GitHub.'
-                          : `Verification failed: ${userDetailsError}`}
+                          ? t('landing.user_not_found_error_desc', {
+                              defaultValue:
+                                'User not found. Check the spelling or confirm if this account exists on GitHub.',
+                            })
+                          : `${t('landing.verification_failed', { defaultValue: 'Verification failed' })}: ${userDetailsError}`}
                       </motion.p>
                     ) : userDetails ? (
                       <motion.div
@@ -663,12 +782,17 @@ export default function LandingPageClient() {
                         exit={{ opacity: 0 }}
                         className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-3 py-2"
                       >
-                        <Image
+                        <img
                           src={userDetails.avatar_url}
                           alt={userDetails.login}
-                          width={24}
-                          height={24}
-                          className="w-6 h-6 rounded-full border border-emerald-500/20"
+                          width="25"
+                          height="25"
+                          className="w-6 h-6 rounded-full border border-emerald-500/20 object-cover"
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            img.onerror = null;
+                            img.src = `https://github.com/${userDetails.login}.png`;
+                          }}
                         />
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-zinc-200">
@@ -678,7 +802,7 @@ export default function LandingPageClient() {
                         </div>
                         <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto flex items-center gap-1">
                           <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
-                          Verified Profile
+                          {t('landing.verified_profile', { defaultValue: 'Verified Profile' })}
                         </span>
                       </motion.div>
                     ) : null}
@@ -690,7 +814,7 @@ export default function LandingPageClient() {
               <div className="flex flex-col gap-3 mt-4 border-t border-zinc-200/5 dark:border-white/5 pt-4">
                 <div className="flex flex-wrap items-center gap-2.5 text-xs">
                   <span className="text-zinc-500 font-semibold uppercase tracking-wider text-[9px]">
-                    Demo:
+                    {t('landing.demo', { defaultValue: 'Demo:' })}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {['torvalds', 'gaearon', 'vercel', 'sindresorhus'].map((demo) => (
@@ -709,7 +833,7 @@ export default function LandingPageClient() {
                 {searches.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2.5 text-xs mt-1">
                     <span className="text-zinc-500 font-semibold uppercase tracking-wider text-[9px]">
-                      Recent:
+                      {t('landing.recent', { defaultValue: 'Recent:' })}
                     </span>
                     <div className="flex flex-wrap gap-2 items-center">
                       {searches.map((s) => {
@@ -719,13 +843,19 @@ export default function LandingPageClient() {
                             key={s}
                             className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200/10 bg-zinc-200/5 dark:border-white/5 dark:bg-[#111] pl-2 pr-1.5 py-1 text-xs text-zinc-700 dark:text-white/70 transition-all duration-300 hover:border-emerald-500/30 hover:bg-zinc-200/10 dark:hover:bg-white/10 dark:hover:text-white select-none group/pill"
                           >
-                            <Image
+                            <img
                               src={`https://github.com/${displayName}.png?size=40`}
                               alt={displayName}
-                              width={16}
-                              height={16}
-                              className="w-4 h-4 rounded-full border border-zinc-200/20 dark:border-white/20"
+                              width="17"
+                              height="17"
+                              className="w-4 h-4 rounded-full border border-zinc-200/20 dark:border-white/20 object-cover"
+                              onError={(e) => {
+                                const img = e.currentTarget as HTMLImageElement;
+                                img.onerror = null;
+                                img.style.display = 'none';
+                              }}
                             />
+
                             <button
                               type="button"
                               onClick={() => selectDemoUser(displayName)}
@@ -752,7 +882,7 @@ export default function LandingPageClient() {
                         onClick={clearSearches}
                         className="text-[10px] text-zinc-500 underline hover:text-zinc-800 dark:hover:text-white transition-colors cursor-pointer ml-1"
                       >
-                        Clear
+                        {t('landing.clear', { defaultValue: 'Clear' })}
                       </button>
                     </div>
                   </div>
@@ -766,17 +896,27 @@ export default function LandingPageClient() {
             <div className="relative flex flex-col min-h-[480px] md:min-h-[520px] items-center justify-center overflow-hidden rounded-3xl border border-black/5 bg-white/50 p-8 backdrop-blur-xl shadow-2xl dark:border-white/10 dark:bg-[#0a0a0a]/80">
               {hasUsername ? (
                 <div className="w-full flex flex-col items-center justify-center gap-4">
-                  {userDetailsError === 'User not found' ? (
+                  {userDetailsError ? (
                     <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
                       <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-red-500/20 bg-red-500/10 shadow-inner">
                         <X size={32} className="text-red-500" />
                       </div>
                       <div>
                         <p className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                          GitHub user not found
+                          {userDetailsError === 'User not found'
+                            ? t('landing.user_not_found', { defaultValue: 'GitHub user not found' })
+                            : t('landing.verification_failed', {
+                                defaultValue: 'Verification failed',
+                              })}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-white/65 mt-1">
-                          Please check the username and try again.
+                          {userDetailsError === 'User not found'
+                            ? t('landing.user_not_found_desc', {
+                                defaultValue: 'Please check the username and try again.',
+                              })
+                            : `${t('landing.verification_failed', {
+                                defaultValue: 'Verification failed',
+                              })}: ${userDetailsError}`}
                         </p>
                       </div>
                     </div>
@@ -794,10 +934,14 @@ export default function LandingPageClient() {
                           </div>
                           <div>
                             <p className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                              GitHub user not found
+                              {t('landing.user_not_found', {
+                                defaultValue: 'GitHub user not found',
+                              })}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-white/65 mt-1">
-                              Please check the username and try again.
+                              {t('landing.user_not_found_desc', {
+                                defaultValue: 'Please check the username and try again.',
+                              })}
                             </p>
                           </div>
                         </div>
@@ -811,20 +955,35 @@ export default function LandingPageClient() {
                         animate={{ opacity: badgeLoaded ? 1 : 0, scale: badgeLoaded ? 1 : 0.95 }}
                         transition={{ duration: 0.5, ease: 'easeOut' }}
                         className="w-full max-w-[700px] h-auto drop-shadow-[0_30px_60px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_30px_60px_rgba(0,0,0,0.5)]"
-                        onLoad={() =>
-                          setBadgeResult({ username: previewUsername, status: 'loaded' })
-                        }
-                        onError={() =>
-                          setBadgeResult({ username: previewUsername, status: 'error' })
-                        }
+                        onLoad={() => {
+                          if (previewUsername === latestPreviewUsernameRef.current) {
+                            setBadgeResult({ username: previewUsername, status: 'loaded' });
+                          }
+                        }}
+                        onError={() => {
+                          if (previewUsername === latestPreviewUsernameRef.current) {
+                            setBadgeResult({ username: previewUsername, status: 'error' });
+                          }
+                        }}
                       />
                       {badgeLoaded && (
-                        <button
-                          onClick={DownloadSVG}
-                          className="mt-6 px-4 py-2 rounded-lg bg-sky-600 text-sm font-medium text-white hover:bg-sky-800 transition-colors"
-                        >
-                          Download SVG
-                        </button>
+                        <div className="mt-6 flex gap-3 justify-center">
+                          <button
+                            onClick={DownloadSVG}
+                            className="px-4 py-2 rounded-lg bg-sky-600 text-sm font-medium text-white hover:bg-sky-800 transition-colors"
+                          >
+                            {t('customize.export.download_svg', {
+                              defaultValue: 'Download SVG',
+                            })}
+                          </button>
+
+                          <button
+                            onClick={DownloadPDF}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-800 transition-colors"
+                          >
+                            Download PDF
+                          </button>
+                        </div>
                       )}
                     </>
                   )}
@@ -856,7 +1015,9 @@ export default function LandingPageClient() {
                       ) : userDetailsError && previewUsername ? (
                         <div className="mt-1">
                           <span className="text-[11px] text-red-400/80 font-medium leading-tight block">
-                            Unable to load stats
+                            {t('landing.unable_to_load_stats', {
+                              defaultValue: 'Unable to load stats',
+                            })}
                           </span>
                         </div>
                       ) : (
@@ -869,7 +1030,7 @@ export default function LandingPageClient() {
                       )}
                       {!previewUsername && (
                         <div className="absolute top-1 right-2 text-[8px] uppercase tracking-widest text-emerald-500 font-semibold bg-emerald-500/5 border border-emerald-500/10 px-1 rounded-full">
-                          Demo
+                          {t('landing.demo_badge', { defaultValue: 'Demo' })}
                         </div>
                       )}
                     </div>
@@ -882,11 +1043,11 @@ export default function LandingPageClient() {
                 <button
                   type="button"
                   onClick={copyToClipboard}
-                  disabled={!mounted || trimmedUsername.length === 0}
-                  className={`relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl border px-6 py-3.5 text-sm font-bold transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed ${
+                  aria-disabled={!mounted || trimmedUsername.length === 0}
+                  className={`relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl border px-6 py-3.5 text-sm font-bold transition-all duration-300 active:scale-[0.98] ${
                     mounted && trimmedUsername.length > 0
                       ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:scale-[1.02] hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] cursor-pointer'
-                      : 'border-black/5 bg-gray-50 text-gray-400 dark:border-white/5 dark:bg-transparent dark:text-white/55'
+                      : 'border-black/5 bg-gray-50 text-gray-400 opacity-50 dark:border-white/5 dark:bg-transparent dark:text-white/30 cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/10'
                   }`}
                 >
                   <AnimatePresence mode="wait">
@@ -898,7 +1059,7 @@ export default function LandingPageClient() {
                         exit={{ y: -10, opacity: 0 }}
                         className="flex items-center gap-2"
                       >
-                        <Icons.Check /> Copied
+                        <Icons.Check /> {t('landing.copied', { defaultValue: 'Copied' })}
                       </motion.div>
                     ) : (
                       <motion.div
@@ -908,7 +1069,7 @@ export default function LandingPageClient() {
                         exit={{ y: 10, opacity: 0 }}
                         className="flex items-center gap-2"
                       >
-                        <Copy size={16} /> Copy Link
+                        <Copy size={16} /> {t('landing.copy_link', { defaultValue: 'Copy Link' })}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -924,6 +1085,44 @@ export default function LandingPageClient() {
                   onClick={(e) => {
                     if (!mounted || trimmedUsername.length === 0) {
                       e.preventDefault();
+                      const inputField = document.querySelector(
+                        'input[type="text"]'
+                      ) as HTMLInputElement;
+                      if (inputField) {
+                        // 1. Smoothly scroll to the input
+                        inputField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                        // 2. Focus the input so user can type immediately
+                        inputField.focus();
+
+                        // 3. THE TRENDY FIX: GSAP Shake and Error Glow
+                        gsap.fromTo(
+                          inputField,
+                          {
+                            x: -6,
+                            boxShadow: '0 0 0px rgba(239, 68, 68, 0)',
+                            borderColor: 'inherit',
+                          },
+                          {
+                            x: 6,
+                            borderColor: 'rgba(239, 68, 68, 0.8)', // Subtle red border
+                            boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)', // Soft red glow
+                            duration: 0.08,
+                            yoyo: true,
+                            repeat: 5,
+                            ease: 'power1.inOut',
+                            onComplete: () => {
+                              // Smoothly fade the glow out after shaking
+                              gsap.to(inputField, {
+                                x: 0,
+                                borderColor: 'rgba(255, 255, 255, 0.1)', // Default border
+                                boxShadow: 'none',
+                                duration: 0.4,
+                              });
+                            },
+                          }
+                        );
+                      }
                     } else {
                       trackUser(trimmedUsername);
                       addSearch(trimmedUsername);
@@ -932,11 +1131,11 @@ export default function LandingPageClient() {
                   className={`relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl border px-6 py-3.5 text-sm font-bold transition-all duration-300 active:scale-[0.98] ${
                     mounted && trimmedUsername.length > 0
                       ? 'border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:scale-[1.02] hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] cursor-pointer'
-                      : 'border-black/5 bg-gray-50 text-gray-400 dark:border-white/5 dark:bg-transparent dark:text-white/55 cursor-not-allowed'
+                      : 'border-black/5 bg-gray-50 text-gray-400 opacity-50 dark:border-white/5 dark:bg-transparent dark:text-white/30 cursor-not-allowed'
                   }`}
                 >
                   <ExternalLink size={16} />
-                  Watch Dashboard
+                  {t('landing.watch_dashboard', { defaultValue: 'Watch Dashboard' })}
                 </Link>
               </div>
             </div>
@@ -947,17 +1146,19 @@ export default function LandingPageClient() {
         <section className="mx-auto mb-32 max-w-4xl py-12 border-t border-black/5 dark:border-white/5 relative z-20">
           <div className="text-center mb-16">
             <p className="text-xs font-bold uppercase tracking-[0.25em] bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent mb-3">
-              Workflow
+              {t('landing.workflow', { defaultValue: 'Workflow' })}
             </p>
             <h2
               className="text-3xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white"
               style={{ fontFamily: '"Syncopate", sans-serif' }}
             >
-              How it works
+              {t('landing.how_it_works_title', { defaultValue: 'How it works' })}
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto mt-4 leading-relaxed">
-              Elevating your GitHub profile is a simple 3-step process. Here is how you construct
-              your code monument.
+              {t('landing.how_it_works_desc', {
+                defaultValue:
+                  'Elevating your GitHub profile is a simple 3-step process. Here is how you construct your code monument.',
+              })}
             </p>
           </div>
 
@@ -967,18 +1168,27 @@ export default function LandingPageClient() {
             {[
               {
                 step: '01',
-                title: 'Enter Username',
-                desc: 'Input your GitHub username above. We validate format and fetch your profile statistics in real-time.',
+                title: t('landing.steps.1.title', { defaultValue: 'Enter Username' }),
+                desc: t('landing.steps.1.desc', {
+                  defaultValue:
+                    'Input your GitHub username above. We validate format and fetch your profile statistics in real-time.',
+                }),
               },
               {
                 step: '02',
-                title: 'Generate Badge',
-                desc: 'Instantly build your 3D isometric monolith from your commit logs and configure styles to match your README.',
+                title: t('landing.steps.2.title', { defaultValue: 'Generate Badge' }),
+                desc: t('landing.steps.2.desc', {
+                  defaultValue:
+                    'Instantly build your 3D isometric monolith from your commit logs and configure styles to match your README.',
+                }),
               },
               {
                 step: '03',
-                title: 'Add to README',
-                desc: 'Copy the generated Markdown snippet and embed it into your profile. Your monolith updates as you code.',
+                title: t('landing.steps.3.title', { defaultValue: 'Add to README' }),
+                desc: t('landing.steps.3.desc', {
+                  defaultValue:
+                    'Copy the generated Markdown snippet and embed it into your profile. Your monolith updates as you code.',
+                }),
               },
             ].map((item, idx) => (
               <motion.div
@@ -1032,24 +1242,33 @@ export default function LandingPageClient() {
             accent="text-white"
             accentColor="#10b981"
             index={0}
-            title="Real-time Sync"
-            desc="Pulled directly from GitHub GraphQL API. Your streak updates as fast as your code pushes."
+            title={t('landing.features.sync_title', { defaultValue: 'Real-time Sync' })}
+            desc={t('landing.features.sync_desc', {
+              defaultValue:
+                'Pulled directly from GitHub GraphQL API. Your streak updates as fast as your code pushes.',
+            })}
           />
           <FeatureCard
             icon={<Icons.Copy />}
             accent="text-white"
             accentColor="#8b5cf6"
             index={1}
-            title="Theme Engine"
-            desc="Switch between Neon, Dracula, or custom HEX modes via simple URL management."
+            title={t('landing.features.theme_title', { defaultValue: 'Theme Engine' })}
+            desc={t('landing.features.theme_desc', {
+              defaultValue:
+                'Switch between Neon, Dracula, or custom HEX modes via simple URL management.',
+            })}
           />
           <FeatureCard
             icon={<Icons.Box />}
             accent="text-white"
             accentColor="#06b6d4"
             index={2}
-            title="Isometric Math"
-            desc="Sophisticated 3D projection formulas turn 2D data into digital architecture."
+            title={t('landing.features.isometric_title', { defaultValue: 'Isometric Math' })}
+            desc={t('landing.features.isometric_desc', {
+              defaultValue:
+                'Sophisticated 3D projection formulas turn 2D data into digital architecture.',
+            })}
           />
         </FeatureCardsSection>
 
@@ -1061,29 +1280,6 @@ export default function LandingPageClient() {
   );
 }
 
-const STEPS = [
-  {
-    n: '01',
-    title: 'Open Your Profile Repo',
-    body: 'Navigate to github.com/YOUR_USERNAME/YOUR_USERNAME - your special profile repository.',
-  },
-  {
-    n: '02',
-    title: 'Edit README.md',
-    body: "Click the pencil icon to open the file in GitHub's built-in editor.",
-  },
-  {
-    n: '03',
-    title: 'Paste the Snippet',
-    body: 'Place your cursor wherever you want the monolith to appear, then paste (Ctrl+V / Cmd+V).',
-  },
-  {
-    n: '04',
-    title: 'Save & Ship It',
-    body: 'Click "Commit changes" and visit your profile. Your 3D streak is now live.',
-  },
-];
-
 function SuccessGuide({
   markdown,
   username,
@@ -1093,6 +1289,41 @@ function SuccessGuide({
   username: string;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
+
+  const STEPS = [
+    {
+      n: '01',
+      title: t('success_guide.step_1_title', { defaultValue: 'Open Your Profile Repo' }),
+      body: t('success_guide.step_1_body', {
+        defaultValue:
+          'Navigate to github.com/YOUR_USERNAME/YOUR_USERNAME - your special profile repository.',
+      }),
+    },
+    {
+      n: '02',
+      title: t('success_guide.step_2_title', { defaultValue: 'Edit README.md' }),
+      body: t('success_guide.step_2_body', {
+        defaultValue: "Click the pencil icon to open the file in GitHub's built-in editor.",
+      }),
+    },
+    {
+      n: '03',
+      title: t('success_guide.step_3_title', { defaultValue: 'Paste the Snippet' }),
+      body: t('success_guide.step_3_body', {
+        defaultValue:
+          'Place your cursor wherever you want the monolith to appear, then paste (Ctrl+V / Cmd+V).',
+      }),
+    },
+    {
+      n: '04',
+      title: t('success_guide.step_4_title', { defaultValue: 'Save & Ship It' }),
+      body: t('success_guide.step_4_body', {
+        defaultValue: 'Click "Commit changes" and visit your profile. Your 3D streak is now live.',
+      }),
+    },
+  ];
+
   return (
     <motion.div
       key="success-guide"
@@ -1113,10 +1344,12 @@ function SuccessGuide({
             </span>
             <div>
               <p className="mb-0.5 text-xs font-medium uppercase tracking-[0.2em] text-gray-500 dark:text-[#A1A1AA]">
-                Markdown Copied
+                {t('success_guide.markdown_copied', { defaultValue: 'Markdown Copied' })}
               </p>
               <h2 className="text-2xl font-extrabold tracking-tight text-black dark:text-white">
-                Your Monolith is Ready - Deploy It in 4 Steps
+                {t('success_guide.title', {
+                  defaultValue: 'Your Monolith is Ready - Deploy It in 4 Steps',
+                })}
               </h2>
             </div>
           </div>
@@ -1124,7 +1357,7 @@ function SuccessGuide({
           <button
             onClick={onDismiss}
             className="ml-4 mt-1 shrink-0 rounded-xl p-2 text-gray-500 transition-all hover:bg-gray-100 hover:text-black dark:text-white/55 dark:hover:bg-white/5 dark:hover:text-white"
-            aria-label="Dismiss guide"
+            aria-label={t('success_guide.dismiss_aria', { defaultValue: 'Dismiss guide' })}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1167,7 +1400,7 @@ function SuccessGuide({
 
         <div className="px-8 py-6">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-gray-500 dark:text-white/55">
-            Your copied snippet
+            {t('success_guide.copied_snippet_label', { defaultValue: 'Your copied snippet' })}
           </p>
           <div className="flex items-center gap-3 rounded-xl border border-black/10 bg-gray-100 px-4 py-3 font-mono text-sm dark:border-white/8 dark:bg-black/60">
             <span className="shrink-0 select-none text-gray-500 dark:text-[#A1A1AA]">$</span>
@@ -1176,13 +1409,28 @@ function SuccessGuide({
             </code>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-gray-500 dark:text-white/55">
-            Tip: Add <code className="text-gray-700 dark:text-white/55">?accent=808080</code> to the
-            URL to change your monolith&apos;s colour palette.
+            {(() => {
+              const fullTip = t('success_guide.color_tip', {
+                defaultValue:
+                  "Tip: Add ?accent=808080 to the URL to change your monolith's colour palette.",
+              });
+              const parts = fullTip.split('?accent=808080');
+              if (parts.length === 2) {
+                return (
+                  <>
+                    {parts[0]}
+                    <code className="text-gray-700 dark:text-white/55">?accent=808080</code>
+                    {parts[1]}
+                  </>
+                );
+              }
+              return fullTip;
+            })()}
           </p>
           <div className="mt-8 flex justify-center border-t border-black/10 pt-6 dark:border-white/5">
             <Link href={`/dashboard/${username}`} onClick={() => trackUser(username)}>
               <span className="border border-black/10 bg-gray-100 px-6 py-2.5 rounded-lg text-sm font-semibold text-black transition-all duration-200 hover:bg-gray-200 hover:scale-[1.01] active:scale-[0.99] dark:border-[rgba(255,255,255,0.15)] dark:bg-white dark:text-black dark:hover:bg-zinc-100">
-                Watch Your Dashboard
+                {t('success_guide.watch_dashboard_btn', { defaultValue: 'Watch Your Dashboard' })}
               </span>
             </Link>
           </div>

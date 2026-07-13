@@ -1,23 +1,64 @@
 // app/api/github/route.ts
 
 import { NextResponse, after } from 'next/server';
-import { getFullDashboardData } from '@/lib/github';
-import { githubParamsSchema } from '@/lib/validations';
+import { getFullDashboardData, isAbortError } from '@/lib/github';
+import { githubParamsSchema, coerceQueryParams } from '@/lib/validations';
 import { getClientIp } from '@/utils/getClientIp';
 import { quotaMonitor } from '@/services/github/quota-monitor';
 import { refreshPolicy } from '@/services/github/refresh-policy';
+import { getRateLimitHeaders } from '@/lib/rate-limit';
 import { refreshRateLimiter } from '@/services/github/refresh-rate-limiter';
 import { backgroundRefresh } from '@/services/github/background-refresh';
+import { logger } from '@/lib/logger';
+import { RateLimiter } from '@/lib/rate-limit';
+
+const dashboardLimiter = new RateLimiter(10, 60_000, 1);
+
+const MAX_ERROR_CAUSE_DEPTH = 10;
+
+function getSafeRootCause(error: unknown): unknown {
+  let currentErr: unknown = error;
+  const visitedErrors = new WeakSet<object>();
+  let depth = 0;
+
+  while (
+    currentErr &&
+    typeof currentErr === 'object' &&
+    'cause' in currentErr &&
+    depth < MAX_ERROR_CAUSE_DEPTH
+  ) {
+    if (visitedErrors.has(currentErr)) {
+      return currentErr;
+    }
+
+    visitedErrors.add(currentErr);
+    currentErr = (currentErr as { cause?: unknown }).cause;
+    depth += 1;
+  }
+
+  return currentErr;
+}
+
+function getSafeErrorMessage(error: unknown): string {
+  const rootCause = getSafeRootCause(error);
+
+  if (rootCause instanceof Error && rootCause.message) {
+    return rootCause.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Unknown error';
+}
 
 function logSecurityEvent(event: string, details: Record<string, unknown>) {
-  console.warn(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      type: 'SECURITY_EVENT',
-      event,
-      ...details,
-    })
-  );
+  logger.warn('Security event', {
+    type: 'SECURITY_EVENT',
+    event,
+    ...details,
+  });
 }
 
 /**
@@ -38,10 +79,19 @@ function logSecurityEvent(event: string, details: Record<string, unknown>) {
  * - 500 → Internal server error
  */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
   const ip = getClientIp(request);
+  const rateLimitKey =
+    ip && ip !== 'unknown' ? ip : `unknown:${request.headers.get('user-agent') ?? 'no-agent'}`;
 
-  const parseResult = githubParamsSchema.safeParse(Object.fromEntries(searchParams.entries()));
+  if (!(await dashboardLimiter.check(rateLimitKey))) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const parseResult = githubParamsSchema.safeParse(coerceQueryParams(searchParams));
 
   if (!parseResult.success) {
     return NextResponse.json(
@@ -63,7 +113,7 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(
       { error: 'GitHub API quota is low. Cache refresh temporarily disabled.' },
-      { status: 429 }
+      { status: 429, headers: { 'Retry-After': '60' } }
     );
   }
 
@@ -80,11 +130,7 @@ export async function GET(request: Request) {
         { error: 'Refresh rate limit exceeded. Please try again later.' },
         {
           status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimitCheck.limit.toString(),
-            'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitCheck.reset.toString(),
-          },
+          headers: getRateLimitHeaders(rateLimitCheck),
         }
       );
     }
@@ -106,8 +152,14 @@ export async function GET(request: Request) {
     }
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
-    const data = await getFullDashboardData(username, { bypassCache: shouldBypassCache });
+    const data = await getFullDashboardData(username, {
+      bypassCache: shouldBypassCache,
+      signal: controller.signal,
+    });
 
     // 4. Stale-While-Revalidate background refresh for normal cached requests
     if (!shouldBypassCache) {
@@ -137,14 +189,15 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: unknown) {
-    const err = error as {
+    const rootCause = getSafeRootCause(error);
+
+    const err = (rootCause || error) as {
       status?: number;
       response?: { status?: number };
       message?: string;
     };
 
     const status = err.status || err.response?.status || undefined;
-
     const message = err.message || '';
 
     // 404 - User not found (status-first; exact message match as fallback for GraphQL paths
@@ -173,7 +226,7 @@ export async function GET(request: Request) {
     if (status === 429) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
-        { status: 429 }
+        { status: 429, headers: { 'Retry-After': '60' } }
       );
     }
 
@@ -186,9 +239,19 @@ export async function GET(request: Request) {
       );
     }
 
+    // 504 - Upstream request timeout or AbortController abort
+    if (isAbortError(rootCause || error)) {
+      return NextResponse.json(
+        { error: 'Upstream request timed out after 10 seconds.' },
+        { status: 504 }
+      );
+    }
+
     // Default fallback
-    const errMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    const errMessage = getSafeErrorMessage(error);
 
     return NextResponse.json({ error: errMessage }, { status: 500 });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
