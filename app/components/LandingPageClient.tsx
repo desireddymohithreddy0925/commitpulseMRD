@@ -544,7 +544,7 @@ export default function LandingPageClient() {
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (trimmedUsername.length > 0) {
+    if (trimmedUsername.length > 0 && trimmedUsername !== previewUsername) {
       setInstantUsername(trimmedUsername);
       setBadgeResult(null);
       trackUser(trimmedUsername);
