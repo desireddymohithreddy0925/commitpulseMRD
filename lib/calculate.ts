@@ -501,16 +501,29 @@ export function aggregateCalendars(
 /**
  * Chunks contribution days into weekly arrays, with the option to hide weekends.
  */
+/**
+ * Chunks contribution days into weekly arrays, with the option to hide weekends.
+ */
 export function chunkDaysIntoWeeks(
   days?: ContributionDay[] | null,
   hideWeekend: boolean = false
 ): ContributionCalendar['weeks'] {
-  if (!days || !Array.isArray(days)) {
+  if (!days || !Array.isArray(days) || days.length === 0) {
     return [];
   }
 
-  // Sort days chronologically
-  const sorted = [...days].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Filter out null/undefined days and sort chronologically
+  const validDays = days.filter(
+    (day): day is ContributionDay => day !== null && day !== undefined && day.date !== undefined
+  );
+
+  if (validDays.length === 0) {
+    return [];
+  }
+
+  const sorted = [...validDays].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 
   // Filter out weekends if hideWeekend is true
   let filteredDays = sorted;
@@ -532,6 +545,11 @@ export function chunkDaysIntoWeeks(
 
   for (let i = 0; i < filteredDays.length; i++) {
     const day = filteredDays[i];
+    // Ensure day is not null before accessing properties
+    if (!day || !day.date) {
+      continue;
+    }
+
     const currentDate = new Date(day.date);
     const currentDayOfWeek = currentDate.getDay();
 
@@ -560,7 +578,6 @@ export function chunkDaysIntoWeeks(
     }
 
     if (isNewWeek) {
-      // Push the current week as a ContributionWeek object
       weeks.push({
         contributionDays: currentWeek,
       });
