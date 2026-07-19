@@ -561,13 +561,13 @@ export async function GET(request: Request) {
       }
 
       if (effectiveDays) {
-        const allDays = calendar.weeks.flatMap((w) => w.contributionDays);
-        const filteredDays = allDays.slice(-effectiveDays);
-        calendar = {
-          totalContributions: filteredDays.reduce((sum, d) => sum + d.contributionCount, 0),
-          weeks: chunkDaysIntoWeeks(filteredDays),
-        };
-      }
+  const allDays = calendar.weeks.flatMap((w) => w.contributionDays);
+  const filteredDays = allDays.slice(-effectiveDays);
+  calendar = {
+    totalContributions: filteredDays.reduce((sum, d) => sum + d.contributionCount, 0),
+    weeks: chunkDaysIntoWeeks(filteredDays, hide_weekend),  // ← ADD hide_weekend
+  };
+}
     }
 
     // ─── JSON output mode ──────────────────────────────────────────────────
