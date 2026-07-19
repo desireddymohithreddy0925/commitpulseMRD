@@ -498,6 +498,9 @@ export function aggregateCalendars(
 /**
  * Chunks contribution days into weekly arrays, with the option to hide weekends.
  */
+/**
+ * Chunks contribution days into weekly arrays, with the option to hide weekends.
+ */
 export function chunkDaysIntoWeeks(
   days?: ContributionDay[] | null,
   hideWeekend: boolean = false
@@ -541,13 +544,12 @@ export function chunkDaysIntoWeeks(
     // Check if this day starts a new week
     const prevDate = new Date(filteredDays[i - 1].date);
     const prevDayOfWeek = prevDate.getDay();
-    
+
     // Determine if we need to start a new week
     let isNewWeek = false;
-    
+
     if (hideWeekend) {
       // When weekends are hidden, start a new week if the gap between days is more than 1
-      // or if the previous day was a weekend (which should have been filtered out)
       const dayDiff = Math.floor(
         (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
       );
@@ -558,15 +560,21 @@ export function chunkDaysIntoWeeks(
     }
 
     if (isNewWeek) {
-      weeks.push(currentWeek);
+      // Push the current week as a ContributionWeek object
+      weeks.push({
+        contributionDays: currentWeek,
+      });
       currentWeek = [];
     }
-    
+
     currentWeek.push(day);
   }
 
+  // Push the last week
   if (currentWeek.length > 0) {
-    weeks.push(currentWeek);
+    weeks.push({
+      contributionDays: currentWeek,
+    });
   }
 
   return weeks;
