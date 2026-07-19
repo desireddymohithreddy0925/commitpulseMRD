@@ -78,8 +78,9 @@ describe('ApiStreakPngRoute - TypeScript Compiler Validation & Schema Constraint
       expect(result.data.repo).toBeUndefined();
       expect(result.data.org).toBeUndefined();
 
-      expectTypeOf(result.data.border).toEqualTypeOf<string | undefined>();
-      expectTypeOf(result.data.bg).toEqualTypeOf<'solid' | 'linear' | 'radial' | undefined>();
+      expectTypeOf(result.data.border).toEqualTypeOf<import('@/types').HexColor | undefined>();
+      expectTypeOf(result.data.bg).toEqualTypeOf<import('@/types').HexColor | undefined>();
+      expectTypeOf(result.data.bgType).toEqualTypeOf<'solid' | 'linear' | 'radial'>();
       expectTypeOf(result.data.repo).toEqualTypeOf<string | undefined>();
     }
   });
