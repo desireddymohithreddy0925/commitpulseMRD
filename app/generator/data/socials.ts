@@ -552,6 +552,36 @@ export const SOCIALS: Social[] = [
     baseUrl: 'https://opencollective.com/',
     placeholder: 'e.g. https://opencollective.com/yourname',
   },
+  {
+    id: 'kick',
+    name: 'Kick',
+    category: 'Streaming',
+    iconUrl: SI('kick'),
+    type: 'simpleicon',
+    siSlug: 'kick',
+    baseUrl: 'https://kick.com/',
+    placeholder: 'e.g. https://kick.com/yourchannel',
+  },
+  {
+    id: 'odysee',
+    name: 'Odysee',
+    category: 'Streaming',
+    iconUrl: SI('odysee'),
+    type: 'simpleicon',
+    siSlug: 'odysee',
+    baseUrl: 'https://odysee.com/@',
+    placeholder: 'e.g. https://odysee.com/@yourchannel',
+  },
+  {
+    id: 'huggingface',
+    name: 'Hugging Face',
+    category: 'Developer',
+    iconUrl: SI('huggingface'),
+    type: 'simpleicon',
+    siSlug: 'huggingface',
+    baseUrl: 'https://huggingface.co/',
+    placeholder: 'e.g. https://huggingface.co/yourname',
+  },
 ];
 
 export const SOCIAL_CATEGORIES: SocialCategory[] = [
