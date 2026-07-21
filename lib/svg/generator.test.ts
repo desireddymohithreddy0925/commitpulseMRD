@@ -832,7 +832,7 @@ describe('generateSVG', () => {
       );
 
       expect(svg).toContain(
-        '<title id="cp-title-octocat">CommitPulse User Stats for octocat</title>'
+        '<title id="cp-title-octocat">GitHub streak for octocat is 5 days</title>'
       );
       expect(svg).toContain('<desc id="cp-desc-octocat">');
       expect(svg).toContain('aria-labelledby="cp-title-octocat"');

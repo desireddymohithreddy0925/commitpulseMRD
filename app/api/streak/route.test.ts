@@ -357,7 +357,7 @@ describe('GET /api/streak', () => {
       const response = await GET(makeRequest({ user: 'octocat' }));
       const body = await response.text();
       expect(body).toContain('<title>');
-      expect(body).toContain('Stats for');
+      expect(body).toContain('streak for');
     });
 
     it('returns a small SVG when size=small', async () => {

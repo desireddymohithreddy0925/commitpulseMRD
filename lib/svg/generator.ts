@@ -243,13 +243,13 @@ function renderHeader(
   safeId: string
 ): string {
   const unit = params.mode === 'loc' ? 'est. lines of code' : 'total contributions';
-  const entity = params.org ? 'Organization' : params.repo ? 'Repository' : 'User';
+  const entityPrefix = params.org ? 'Organization ' : params.repo ? 'Repository ' : '';
+  const streakText = `${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}`;
+  const longestStreakText = `${stats.longestStreak} ${stats.longestStreak === 1 ? 'day' : 'days'}`;
 
   return `
-  <title id="cp-title-${safeId}">CommitPulse ${entity} Stats for ${safeUser}</title>
-  <desc id="cp-desc-${safeId}">
-    ${safeUser} has ${stats.totalContributions} ${unit} and a longest streak of ${stats.longestStreak} days.
-  </desc>
+  <title id="cp-title-${safeId}">GitHub ${entityPrefix}streak for ${safeUser} is ${streakText}</title>
+  <desc id="cp-desc-${safeId}">${safeUser} has ${stats.totalContributions} ${unit}, a current streak of ${streakText}, and a longest streak of ${longestStreakText}.</desc>
   ${renderDefs(sf, params)}`;
 }
 
@@ -1090,12 +1090,13 @@ function generateCompactSVG(stats: StreakStats, params: BadgeParams): string {
 
   const previousBackgroundRectBorderAttrs = currentBackgroundRectBorderAttrs;
   currentBackgroundRectBorderAttrs = borderAttr;
+  const streakText = `${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}`;
 
   try {
     return `
 <svg style="max-width: 100%; height: auto;" xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none" role="img" focusable="false" aria-labelledby="cp-title-${safeId}" aria-describedby="cp-desc-${safeId}">
-  <title id="cp-title-${safeId}">CommitPulse Compact Streak for ${safeUser}</title>
-  <desc id="cp-desc-${safeId}">${safeUser} has a current streak of ${stats.currentStreak} days.</desc>
+  <title id="cp-title-${safeId}">GitHub streak for ${safeUser} is ${streakText}</title>
+  <desc id="cp-desc-${safeId}">${safeUser} has a current streak of ${streakText} and total contributions of ${stats.totalContributions}.</desc>
   <style>
   ${process.env.NODE_ENV === 'test' ? `@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap');` : DEFAULT_FONTS_BASE64}
   ${googleFontsImport}
