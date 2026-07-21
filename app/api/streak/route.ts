@@ -13,10 +13,8 @@ import {
   calculateStreak,
   calculateMonthlyStats,
   aggregateCalendars,
-  convertLocalToUtc,
   chunkDaysIntoWeeks,
   normalizeCalendarToTimezone,
-  isLeapYear,
   daysInYear,
 } from '@/lib/calculate';
 import {
@@ -55,9 +53,7 @@ import { refreshPolicy } from '@/services/github/refresh-policy';
 import { refreshRateLimiter } from '@/services/github/refresh-rate-limiter';
 import { logger, setRequestId, clearRequestId } from '@/lib/logger';
 
-import { validationCache as _vc, normalizeCacheKey, cachedValidation } from './validation-cache';
-// Re-alias so existing usages in this file continue to work.
-const validationCache = _vc;
+import { normalizeCacheKey, cachedValidation } from './validation-cache';
 
 const SVG_CSP_HEADER =
   "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.gstatic.com;";

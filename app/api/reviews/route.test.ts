@@ -175,27 +175,25 @@ describe('POST /api/reviews', () => {
 
   it('returns 500 if MONGODB_URI is not set in production', async () => {
     const orig = process.env.MONGODB_URI;
-    const origNodeEnv = process.env.NODE_ENV;
     delete process.env.MONGODB_URI;
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     const res = await POST(adminReq('POST', '/reviews', body));
     expect(res.status).toBe(500);
     process.env.MONGODB_URI = orig;
-    process.env.NODE_ENV = origNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it('returns 200 bypassing if MONGODB_URI is not set in development', async () => {
     const orig = process.env.MONGODB_URI;
-    const origNodeEnv = process.env.NODE_ENV;
     delete process.env.MONGODB_URI;
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     const res = await POST(adminReq('POST', '/reviews', body));
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.message).toContain('bypassed');
     process.env.MONGODB_URI = orig;
-    process.env.NODE_ENV = origNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it('returns 500 on internal server error', async () => {
