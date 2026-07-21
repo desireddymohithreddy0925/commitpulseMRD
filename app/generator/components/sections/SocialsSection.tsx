@@ -111,6 +111,7 @@ export function SocialsSection({
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30 pointer-events-none"
               />
               <input
+                aria-label="Search platforms..."
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

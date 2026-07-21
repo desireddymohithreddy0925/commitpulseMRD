@@ -210,6 +210,7 @@ export function ContributionGraphSection({
                   <Search size={14} />
                 </span>
                 <input
+                  aria-label="GitHub username"
                   type="text"
                   value={safeUsername}
                   onChange={(e) => onGithubUsernameChange(e.target.value.trim())}
