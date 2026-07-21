@@ -1,4 +1,5 @@
 'use client';
+import { copyToClipboard as clipboardCopy } from '@/utils/clipboard';
 import { trackUser } from '@/utils/tracking';
 import { useTranslation } from '@/context/TranslationContext';
 import { renderHeroTitle } from './heroTitle';
@@ -513,7 +514,7 @@ export default function LandingPageClient() {
     }
 
     try {
-      await navigator.clipboard.writeText(markdown);
+      await clipboardCopy(markdown);
     } catch {
       setCopied(false);
       return;
