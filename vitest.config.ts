@@ -27,12 +27,28 @@ export default defineConfig({
         ? []
         : ['**/*.massive-scaling.test.ts', '**/*.massive-scaling.test.tsx']),
     ],
-    maxWorkers: process.env.CI ? 2 : Math.max(1, Math.floor(os.cpus().length / 2)),
+    maxWorkers: process.env.CI ? 4 : Math.max(1, Math.floor(os.cpus().length / 2)),
     testTimeout: 30000,
-    pool: 'forks',
+    pool: process.env.CI ? 'threads' : 'forks',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
+      include: [
+        'app/**/*.{ts,tsx}',
+        'lib/**/*.{ts,tsx}',
+        'services/**/*.{ts,tsx}',
+        'components/**/*.{ts,tsx}',
+        'utils/**/*.{ts,tsx}',
+        'src/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/*.spec.{ts,tsx}',
+        '**/__tests__/**',
+        '**/*.d.ts',
+        '**/node_modules/**',
+        '**/.next/**',
+      ],
       thresholds: {
         statements: 50,
         branches: 50,
