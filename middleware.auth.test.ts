@@ -18,6 +18,8 @@ vi.mock('./auth', () => ({
   auth: vi.fn(),
 }));
 
+const mockAuth = vi.mocked(auth as unknown as () => Promise<Session | null>);
+
 describe('middleware auth and authorization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -29,7 +31,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('unauthenticated request to /api/enterprise/teams returns 401', async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const request = new NextRequest('http://localhost:3000/api/enterprise/teams');
     const response = await middleware(request);
@@ -41,7 +43,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('authenticated request to /api/enterprise/teams returns 503 if ENTERPRISE_ADMIN_GITHUB_IDS is empty', async () => {
-    vi.mocked(auth).mockResolvedValue({ user: { id: 'user123' } } as unknown as Session);
+    mockAuth.mockResolvedValue({ user: { id: 'user123' } } as unknown as Session);
     vi.stubEnv('ENTERPRISE_ADMIN_GITHUB_IDS', '');
 
     const request = new NextRequest('http://localhost:3000/api/enterprise/teams');
@@ -53,7 +55,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('authenticated request to /api/enterprise/teams returns 403 if user is not an enterprise admin', async () => {
-    vi.mocked(auth).mockResolvedValue({ user: { id: 'user123' } } as unknown as Session);
+    mockAuth.mockResolvedValue({ user: { id: 'user123' } } as unknown as Session);
     vi.stubEnv('ENTERPRISE_ADMIN_GITHUB_IDS', 'admin1,admin2');
 
     const request = new NextRequest('http://localhost:3000/api/enterprise/teams');
@@ -65,7 +67,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('authenticated request to /api/enterprise/teams passes if user is an enterprise admin', async () => {
-    vi.mocked(auth).mockResolvedValue({ user: { id: 'admin1' } } as unknown as Session);
+    mockAuth.mockResolvedValue({ user: { id: 'admin1' } } as unknown as Session);
     vi.stubEnv('ENTERPRISE_ADMIN_GITHUB_IDS', 'admin1,admin2');
     const nextSpy = vi.spyOn(NextResponse, 'next');
 
@@ -77,7 +79,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('unauthenticated request to /api/architecture returns 401', async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const request = new NextRequest('http://localhost:3000/api/architecture');
     const response = await middleware(request);
@@ -86,7 +88,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('authenticated request to /api/architecture passes', async () => {
-    vi.mocked(auth).mockResolvedValue({ user: { id: 'user123' } } as unknown as Session);
+    mockAuth.mockResolvedValue({ user: { id: 'user123' } } as unknown as Session);
     const nextSpy = vi.spyOn(NextResponse, 'next');
 
     const request = new NextRequest('http://localhost:3000/api/architecture');
@@ -96,7 +98,7 @@ describe('middleware auth and authorization', () => {
   });
 
   it('unauthenticated request to /api/streak passes', async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
     const nextSpy = vi.spyOn(NextResponse, 'next');
 
     const request = new NextRequest('http://localhost:3000/api/streak?user=octocat');
