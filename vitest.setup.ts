@@ -45,6 +45,23 @@ vi.mock('next/headers', () => {
   };
 });
 
+// Automatically inject Origin header to satisfy CSRF protection in API tests
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  class MockNextRequest extends actual.NextRequest {
+    constructor(input: URL | RequestInfo, init?: RequestInit) {
+      super(input, init);
+      if (!this.headers.has('origin') && !this.headers.has('referer')) {
+        this.headers.set('origin', 'https://commitpulse.vercel.app');
+      }
+    }
+  }
+  return {
+    ...actual,
+    NextRequest: MockNextRequest,
+  };
+});
+
 // Custom Storage prototype override to fix Node.js v25+ experimental localStorage incompatibility with JSDOM
 if (typeof window !== 'undefined' && typeof window.Storage !== 'undefined') {
   const stores = new WeakMap<object, Map<string, string>>();
