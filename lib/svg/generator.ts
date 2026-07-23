@@ -105,6 +105,10 @@ export function truncateUsername(username: string): string {
     : username;
 }
 
+export function truncateLabel(label: string): string {
+  return label.length > 40 ? `${label.slice(0, 40)}...` : label;
+}
+
 export function getUsernameFontSize(username: string): number {
   const len = username.length;
   if (len <= 12) return 18;
@@ -730,9 +734,12 @@ function renderFooter(
     ? 'class="cp-accent-fill scan-line"'
     : `fill="${accent}" class="cp-accent-fill scan-line"`;
 
-  const displayTitle = params.custom_title
-    ? sanitizeCustomText(params.custom_title)
-    : `${truncateUsername(safeUser).toUpperCase()}${isWinner ? ' 👑' : ''}`;
+  const displayTitle =
+    typeof params.label === 'string'
+      ? sanitizeCustomText(truncateLabel(params.label))
+      : params.custom_title
+        ? sanitizeCustomText(params.custom_title)
+        : `${truncateUsername(safeUser).toUpperCase()}${isWinner ? ' 👑' : ''}`;
 
   const titleText = `${displayTitle}${
     params.isOfflineFallback
@@ -740,7 +747,11 @@ function renderFooter(
       : ''
   }`;
 
-  const titleFontSize = getUsernameFontSize(params.custom_title || truncateUsername(safeUser));
+  const titleFontSize = getUsernameFontSize(
+    typeof params.label === 'string'
+      ? truncateLabel(params.label)
+      : params.custom_title || truncateUsername(safeUser)
+  );
 
   let subtitleElement = '';
   if (params.custom_subtitle && !params.hide_title && params.label !== false) {
@@ -1162,9 +1173,12 @@ function generateAutoThemeSVG(
 
   const safeId = safeUser.replace(/[^a-zA-Z0-9-]/g, '_').toLowerCase();
 
-  const displayTitle = params.custom_title
-    ? sanitizeCustomText(params.custom_title)
-    : truncateUsername(safeUser).toUpperCase();
+  const displayTitle =
+    typeof params.label === 'string'
+      ? sanitizeCustomText(truncateLabel(params.label))
+      : params.custom_title
+        ? sanitizeCustomText(params.custom_title)
+        : truncateUsername(safeUser).toUpperCase();
 
   const titleText = `${displayTitle}${
     params.isOfflineFallback
@@ -1172,7 +1186,11 @@ function generateAutoThemeSVG(
       : ''
   }`;
 
-  const titleFontSize = getUsernameFontSize(params.custom_title || truncateUsername(safeUser));
+  const titleFontSize = getUsernameFontSize(
+    typeof params.label === 'string'
+      ? truncateLabel(params.label)
+      : params.custom_title || truncateUsername(safeUser)
+  );
 
   let subtitleElement = '';
   if (params.custom_subtitle && !params.hide_title && params.label !== false) {

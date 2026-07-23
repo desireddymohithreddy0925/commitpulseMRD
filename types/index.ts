@@ -202,7 +202,7 @@ export interface BadgeParams {
   /** GitHub username whose contribution data will be fetched and rendered. Required. */
   user: string;
 
-  label?: boolean;
+  label?: string | boolean;
   /** GitHub username of the opponent to compare against. */
   versus?: string;
 
