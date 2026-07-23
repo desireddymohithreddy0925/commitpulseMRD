@@ -246,7 +246,7 @@ export function ExportPanel({
     <div className="flex flex-col gap-4">
       {/* Code Block Header Control Deck */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div
             className="flex flex-wrap sm:flex-nowrap rounded-xl border border-black/10 bg-white/60 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.03] p-1"
             aria-label="Export format"
