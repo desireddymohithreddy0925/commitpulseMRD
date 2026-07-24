@@ -1,4 +1,5 @@
 'use client';
+// This comment forces a fresh format check
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
